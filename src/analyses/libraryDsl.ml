@@ -104,7 +104,30 @@ let (>>) p f = {
   accs = accs p;
 }
 
+let r = {
+  accesses = [`Read];
+  capture = Pat.ignore;
+}
+let w = {
+  accesses = [`Write];
+  capture = Pat.ignore;
+}
+let (__) = {
+  accesses = [];
+  capture = Pat.arg;
+}
+
+let (.%{;..}) (_: string) accs: _ arg_desc' = [{
+  accesses = Array.to_list accs;
+  capture = Pat.ignore;
+}]
+
+let (.%{}) (_: string) (acc:_): _ arg_desc' = [{
+  accesses = [acc];
+  capture = Pat.ignore;
+}]
+
 (* let p = [r Pat.arg; rw Pat.ignore; rw Pat.arg] >> fun e1 r2 -> `Lock e1 *)
-let p = [r Pat.ignore; __; rw Pat.ignore] >> `Unknown
+let p = [[r; __]; [r]; [r; w; __]; "foo".%{`Read; `Write}; "foo".%{`Read}] >> fun e1 r2 -> `Lock e1
 let s = p.special
 let a = p.accs
