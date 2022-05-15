@@ -134,4 +134,8 @@ pin-depends: [
     "ppx_deriving.5.2.1"
     "git+https://github.com/ocaml-ppx/ppx_deriving.git#0a89b619f94cbbfc3b0fb3255ab4fe5bc77d32d6"
   ]
+  [
+    "round.0.1"
+    "git+https://github.com/brgr/ocaml-round.git#2dfe43050bfdac885607b6697c19c2ed913d5be4"
+  ]
 ]
