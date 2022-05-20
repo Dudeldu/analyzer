@@ -461,7 +461,12 @@ struct
     | `List e -> reachable_from_value ask gs st (`Address (ValueDomain.Lists.entry_rand e)) t description
     | `Struct s -> ValueDomain.Structs.fold (fun k v acc -> AD.join (reachable_from_value ask gs st v t description) acc) s empty
     | `Int _ -> empty
-    | `Float _ -> failwith "todo"
+    (* TODO: Is "empty" correct here?
+       Florian only added a "failwith" here, but with that, I always just ran into this, so
+       I changed it to empty like for `Int....
+       However, I don't know what this function is doing and didn't really look it up, so
+       it could very well be that "empty" is wrong here! *)
+    | `Float _ -> empty
     | `Thread _ -> empty (* thread IDs are abstract and nothing known can be reached from them *)
 
   (* Get the list of addresses accessable immediately from a given address, thus

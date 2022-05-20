@@ -193,7 +193,7 @@ struct
     let rec zero_init_value (t:typ): t =
       match t with
       | TInt (ikind, _) -> `Int (ID.of_int ikind BI.zero)
-      | TFloat (FDouble, _) -> failwith "todo"
+      | TFloat (FDouble, _) -> failwith "todo zero_init_value"
       | TPtr _ -> `Address AD.null_ptr
       | TComp ({cstruct=true; _} as ci,_) -> `Struct (Structs.create (fun fd -> zero_init_value fd.ftype) ci)
       | TComp ({cstruct=false; _} as ci,_) ->
