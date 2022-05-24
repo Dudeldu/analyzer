@@ -516,6 +516,7 @@
           "type": "object",
           "properties": {
             "interval": {
+              // todo: continue here
               "title": "ana.float.interval",
               "description":
                 "Use FloatDomain: (float * float) option.",
@@ -1694,6 +1695,12 @@
         "integer": {
           "title": "warn.integer",
           "description": "integer (Overflow, Div_by_zero) warnings",
+          "type": "boolean",
+          "default": true
+        },
+        "float": {
+          "title": "warn.float",
+          "description": "float (Infinity, Nan, Div_by_zero) warnings",
           "type": "boolean",
           "default": true
         },

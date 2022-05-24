@@ -43,9 +43,13 @@ end
          actually know anything about what is wrong in our domain? *)
 let set_overflow_flag () =
   Messages.warn 
-    ~category:Messages.Category.Integer.overflow 
+    (* FIXME: Currently, we always say "infinity" error... but we have more - can we find them? *)
+    ~category:Messages.Category.FloatMessage.infinity 
+    (* FIXME: These CWE numbers were just taken from IntDomain, so they're probably wrong!
+       Which ones could I put here? Find them on this site:
+       https://cwe.mitre.org/data/definitions/189.html *)
     ~tags:[CWE 189; CWE 191] 
-    "Some problem with float... TODO: Better Warning!"
+    "Float infinity"
 
 (* TODO: We need to use "norm" like we are doing in the IntDomain.
     ---> Where do we need it then? When is it applied in the intdomain? *)

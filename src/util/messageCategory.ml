@@ -21,12 +21,21 @@ type behavior =
 
 type integer = Overflow | DivByZero [@@deriving eq, ord, hash]
 
+(* Note that this is named '_message' because float itself is a built-in type *)
+(* TODO: Do all of these make sense? Check that and use them actually... otherwise, remove them for now! *)
+type float_message = 
+  | Infinity 
+  | Nan 
+  | DivByZero 
+[@@deriving eq, ord, hash]
+
 type cast = TypeMismatch [@@deriving eq, ord, hash]
 
 type category =
   | Assert
   | Behavior of behavior
   | Integer of integer
+  | FloatMessage
   | Race
   | Deadlock
   | Cast of cast
@@ -136,6 +145,31 @@ struct
     | DivByZero -> ["DivByZero"]
 end
 
+module FloatMessage =
+struct
+  type t = float_message
+
+  let create (e: t): category = FloatMessage e
+  let infinity: category = create Infinity
+  let nan: category = create Nan
+  let div_by_zero: category = create DivByZero
+
+  let from_string_list (s: string list): category =
+    match s with
+    | [] -> Unknown
+    | h :: t -> match h with
+      | "infinity" -> infinity
+      | "div_by_zero" -> div_by_zero
+      | "nan" -> nan
+      | _ -> Unknown
+
+  let path_show (e: t) =
+    match e with
+    | Infinity -> ["Infinity"]
+    | Nan -> ["Nan"]
+    | DivByZero -> ["DivByZero"]
+end
+
 module Cast =
 struct
   type t = cast
@@ -161,6 +195,7 @@ let should_warn e =
     | Assert -> "assert"
     | Behavior _ -> "behavior"
     | Integer _ -> "integer"
+    | FloatMessage -> "float"
     | Race -> "race"
     | Deadlock -> "deadlock"
     | Cast _ -> "cast"
@@ -176,6 +211,7 @@ let path_show e =
   | Assert -> ["Assert"]
   | Behavior x -> "Behavior" :: Behavior.path_show x
   | Integer x -> "Integer" :: Integer.path_show x
+  | FloatMessage -> ["Float"]
   | Race -> ["Race"]
   | Deadlock -> ["Deadlock"]
   | Cast x -> "Cast" :: Cast.path_show x
@@ -210,9 +246,10 @@ let categoryName = function
   | Imprecise -> "Imprecise"
 
   | Behavior x -> behaviorName x
-  | Integer x -> match x with
+  | Integer x -> (match x with
     | Overflow -> "Overflow";
-    | DivByZero -> "DivByZero"
+    | DivByZero -> "DivByZero")
+  | FloatMessage -> "Float"
 
 
 let from_string_list (s: string list) =
