@@ -38,6 +38,21 @@ module type FloatDomainBase = sig
   val of_const : float -> t
 end
 
+(* TODO: I think we should add a new CWE number? Where do we do that? *)
+(* TODO: I have removed all parameters to this function... Can we
+         actually know anything about what is wrong in our domain? *)
+let set_overflow_flag () =
+  Messages.warn 
+    ~category:Messages.Category.Integer.overflow 
+    ~tags:[CWE 189; CWE 191] 
+    "Some problem with float... TODO: Better Warning!"
+
+(* TODO: We need to use "norm" like we are doing in the IntDomain.
+    ---> Where do we need it then? When is it applied in the intdomain? *)
+(* FIXME: In IntDomain, we also have a cast parameter... do we also want
+    that here? *)
+
+
 let norm v = 
   let normed = match v with
   | Some (low, high) -> 
@@ -45,8 +60,9 @@ let norm v =
     else if Float.is_finite low && Float.is_finite high then v 
     else None
   | _ -> None
-  in if normed == None then failwith "oh no" else v
-    (* TODO: Continue HERE !!!! Warn here!!! *)
+  in match normed with
+  | Some _ -> v
+  | None -> set_overflow_flag (); None
   (* if Ints_t.compare x y > 0 then None
   else (
     let min_ik = min_int ik in
