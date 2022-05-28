@@ -37,94 +37,20 @@ module type FloatDomainBase = sig
 
   val of_const : float -> t
 end
-
-(* TODO: I think we should add a new CWE number? Where do we do that? *)
-(* TODO: I have removed all parameters to this function... Can we
-         actually know anything about what is wrong in our domain? *)
-let set_overflow_flag () =
-  Messages.warn 
-    (* FIXME: Currently, we always say "infinity" error... but we have more - can we find them? *)
-    ~category:Messages.Category.FloatMessage.infinity 
-    (* FIXME: These CWE numbers were just taken from IntDomain, so they're probably wrong!
-       Which ones could I put here? Find them on this site:
-       https://cwe.mitre.org/data/definitions/189.html *)
-    ~tags:[CWE 189; CWE 191] 
-    "Float infinity"
-
-(* TODO: We need to use "norm" like we are doing in the IntDomain.
-    ---> Where do we need it then? When is it applied in the intdomain? *)
-(* FIXME: In IntDomain, we also have a cast parameter... do we also want
-    that here? *)
-
-
-let norm v = 
-  let normed = match v with
-  | Some (low, high) -> 
-    if compare low high > 0 then failwith "lower bound bigger than upper bound"
-    else if Float.is_finite low && Float.is_finite high then v 
-    else None
-  | _ -> None
-  in match normed with
-  | Some _ -> v
-  | None -> set_overflow_flag (); None
-  (* if Ints_t.compare x y > 0 then None
-  else (
-    let min_ik = min_int ik in
-    let max_ik = max_int ik in
-    let underflow = Ints_t.compare min_ik x > 0 in
-    let overflow = Ints_t.compare max_ik y < 0 in
-    if underflow || overflow then (
-      set_overflow_flag ~cast ~underflow ~overflow ik;
-      if should_wrap ik then (* could add [|| cast], but that's GCC implementation-defined behavior: https://gcc.gnu.org/onlinedocs/gcc/Integers-implementation.html#Integers-implementation *)
-        (* We can only soundly wrap if at most one overflow occurred, otherwise the minimal and maximal values of the interval *)
-        (* on Z will not safely contain the minimal and maximal elements after the cast *)
-        let diff = Ints_t.abs (Ints_t.sub max_ik min_ik) in
-        let resdiff = Ints_t.abs (Ints_t.sub y x) in
-        if Ints_t.compare resdiff diff > 0 then
-          top_of ik
-        else
-          let l = Ints_t.of_bigint @@ Size.cast ik (Ints_t.to_bigint x) in
-          let u = Ints_t.of_bigint @@ Size.cast ik (Ints_t.to_bigint y) in
-          if Ints_t.compare l u <= 0 then
-            Some (l, u)
-          else
-            (* Interval that wraps around (begins to the right of its end). We can not represent such intervals *)
-            top_of ik
-      else if not cast && should_ignore_overflow ik then
-        let tl, tu = BatOption.get @@ top_of ik *)
-
-let set_overflow_flag ~cast ~underflow ~overflow ik =
-  failwith "todo set overflow flag"
-  (*let signed = Cil.isSigned ik in
-  if !GU.postsolving && signed && not cast then
-    Goblintutil.svcomp_may_overflow := true;
-
-  let sign = if signed then "Signed" else "Unsigned" in
-  match underflow, overflow with
-  | true, true ->
-    M.warn ~category:M.Category.Integer.overflow ~tags:[CWE 190; CWE 191] "%s integer overflow and underflow" sign
-  | true, false ->
-    M.warn ~category:M.Category.Integer.overflow ~tags:[CWE 191] "%s integer underflow" sign
-  | false, true ->
-    M.warn ~category:M.Category.Integer.overflow ~tags:[CWE 190] "%s integer overflow" sign
-  | false, false -> assert false*)
-  
-(* TODO: We need to use "norm" like we are doing in the IntDomain.
-    Where do we need it then? When is it applied in the intdomain? *)
-(* FIXME: In IntDomain, we also have a cast parameter... do we also want
-    that here? *)
-
 module FloatInterval = struct
   type t = (float * float) option [@@deriving eq, ord, to_yojson]
 
   let norm v = 
-    match v with
-    | Some (low, high) -> 
-      if Float.is_finite low && Float.is_finite high then 
-        if low > high then failwith "invalid Interval"
-        else v
-      else None
-    | _ -> None
+    let normed = match v with
+      | Some (low, high) -> 
+        if Float.is_finite low && Float.is_finite high then 
+          if low > high then failwith "invalid Interval"
+          else v
+        else None
+      | _ -> None
+    in if normed == None then 
+      Messages.warn ~category:Messages.Category.FloatMessage ~tags:[CWE 189; CWE 739] "Could be +/-infinity or Nan";
+      normed
 
   (**just for norming the arbitraries, so correct intervals get created, but no failwith if low > high*)
   let norm_arb v = 
@@ -211,8 +137,8 @@ module FloatInterval = struct
 
   (** evaluation of the binary operations *)
   let eval_binop eval_operation op1 op2 =
-    match (op1, op2) with 
-    | Some v1, Some v2 -> norm @@ eval_operation v1 v2 
+    norm @@ match (op1, op2) with 
+    | Some v1, Some v2 -> eval_operation v1 v2 
     | _ -> None
 
   let eval_int_binop eval_operation op1 op2 =
@@ -289,7 +215,8 @@ module FloatInterval = struct
     else if h1 = l1 && h2 = l2 && l1 = l2 then (0, 0)
     else (0, 1)
 
-  let add = eval_binop eval_add
+  (* TODO: Continue here... *)
+  let add = print_endline "add called"; eval_binop eval_add
 
   let sub = eval_binop eval_sub
 

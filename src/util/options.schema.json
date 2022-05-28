@@ -516,7 +516,6 @@
           "type": "object",
           "properties": {
             "interval": {
-              // todo: continue here
               "title": "ana.float.interval",
               "description":
                 "Use FloatDomain: (float * float) option.",

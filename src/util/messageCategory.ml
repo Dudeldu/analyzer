@@ -22,11 +22,10 @@ type behavior =
 type integer = Overflow | DivByZero [@@deriving eq, ord, hash]
 
 (* Note that this is named '_message' because float itself is a built-in type *)
-(* TODO: Do all of these make sense? Check that and use them actually... otherwise, remove them for now! *)
+(* TODO: Can we actually distinguish between Infinity and Nan? If yes, do so - I think currently it's not done *)
 type float_message = 
   | Infinity 
   | Nan 
-  | DivByZero 
 [@@deriving eq, ord, hash]
 
 type cast = TypeMismatch [@@deriving eq, ord, hash]
@@ -152,14 +151,12 @@ struct
   let create (e: t): category = FloatMessage e
   let infinity: category = create Infinity
   let nan: category = create Nan
-  let div_by_zero: category = create DivByZero
 
   let from_string_list (s: string list): category =
     match s with
     | [] -> Unknown
     | h :: t -> match h with
       | "infinity" -> infinity
-      | "div_by_zero" -> div_by_zero
       | "nan" -> nan
       | _ -> Unknown
 
@@ -167,7 +164,6 @@ struct
     match e with
     | Infinity -> ["Infinity"]
     | Nan -> ["Nan"]
-    | DivByZero -> ["DivByZero"]
 end
 
 module Cast =
