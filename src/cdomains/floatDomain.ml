@@ -40,7 +40,6 @@ end
 module FloatInterval = struct
   type t = (float * float) option [@@deriving eq, ord, to_yojson]
 
-  let of_const f = norm @@ Some (f, f)
 
   let hash = Hashtbl.hash
 
@@ -97,6 +96,8 @@ module FloatInterval = struct
 
   (**for QCheck: should describe how to generate random values and shrink possilbe counter examples *)
   let arbitrary () = QCheck.map norm_arb (QCheck.option (QCheck.pair QCheck.float QCheck.float)) 
+
+  let of_const f = norm @@ Some (f, f)
 
   let relift x = x 
 
