@@ -22,7 +22,6 @@ type behavior =
 type integer = Overflow | DivByZero [@@deriving eq, ord, hash]
 
 (* Note that this is named '_message' because float itself is a built-in type *)
-(* TODO: Can we actually distinguish between Infinity and Nan? If yes, do so - I think currently it's not done *)
 type float_message = 
   | Infinity 
   | Nan 

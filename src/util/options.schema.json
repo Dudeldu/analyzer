@@ -1699,7 +1699,7 @@
         },
         "float": {
           "title": "warn.float",
-          "description": "float (Infinity, Nan, Div_by_zero) warnings",
+          "description": "float warnings",
           "type": "boolean",
           "default": true
         },
