@@ -144,28 +144,6 @@ struct
     | DivByZero -> ["DivByZero"]
 end
 
-module FloatMessage =
-struct
-  type t = float_message
-
-  let create (e: t): category = FloatMessage e
-  let infinity: category = create Infinity
-  let nan: category = create Nan
-
-  let from_string_list (s: string list): category =
-    match s with
-    | [] -> Unknown
-    | h :: t -> match h with
-      | "infinity" -> infinity
-      | "nan" -> nan
-      | _ -> Unknown
-
-  let path_show (e: t) =
-    match e with
-    | Infinity -> ["Infinity"]
-    | Nan -> ["Nan"]
-end
-
 module Cast =
 struct
   type t = cast
