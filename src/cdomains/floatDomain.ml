@@ -215,8 +215,7 @@ module FloatInterval = struct
     else if h1 = l1 && h2 = l2 && l1 = l2 then (0, 0)
     else (0, 1)
 
-  (* TODO: Continue here... *)
-  let add = print_endline "add called"; eval_binop eval_add
+  let add = eval_binop eval_add
 
   let sub = eval_binop eval_sub
 
