@@ -1701,7 +1701,7 @@
           "title": "warn.float",
           "description": "float warnings",
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "cast": {
           "title": "warn.cast",

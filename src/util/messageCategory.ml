@@ -21,12 +21,6 @@ type behavior =
 
 type integer = Overflow | DivByZero [@@deriving eq, ord, hash]
 
-(* Note that this is named '_message' because float itself is a built-in type *)
-type float_message = 
-  | Infinity 
-  | Nan 
-[@@deriving eq, ord, hash]
-
 type cast = TypeMismatch [@@deriving eq, ord, hash]
 
 type category =
