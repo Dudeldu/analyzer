@@ -1,4 +1,4 @@
-// PARAM: --enable ana.float.interval
+// PARAM: --enable ana.float.interval --enable warn.float
 #include <stdio.h>
 
 void main()
