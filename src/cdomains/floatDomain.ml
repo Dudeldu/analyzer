@@ -156,7 +156,13 @@ module FloatInterval = struct
       let high = if h1 >= h2 then h1 else Float.max_float in
       norm @@ Some (low, high)
 
-  let narrow v1 v2 = (**TODO: support 'threshold_narrowing' and 'narrow_by_meet' option *)
+  let widen v1 v2 = 
+    if GobConfig.get_bool "ana.float.interval_threshold_widening" then
+      widen v1 v2 (**TODO implement threshold widening *)
+    else
+      widen v1 v2
+
+  let narrow v1 v2 =
     match v1, v2 with (**we cannot distinguish between the lower bound beeing -inf or the upper bound beeing inf. Also there is nan *)
     | None, _ -> v2
     | _, _ -> v1

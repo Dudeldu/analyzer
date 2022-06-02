@@ -521,6 +521,13 @@
                 "Use FloatDomain: (float * float) option.",
               "type": "boolean",
               "default": false
+            },
+            "interval_threshold_widening": {
+              "title": "ana.float.interval_threshold_widening",
+              "description":
+                "Use constants appearing in program as threshold for widening",
+              "type": "boolean",
+              "default": false
             }
           },
           "additionalProperties": false
