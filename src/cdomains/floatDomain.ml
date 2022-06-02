@@ -180,7 +180,22 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
   (** evaluation of the binary operations *)
   let eval_binop eval_operation op1 op2 =
     norm @@ match (op1, op2) with 
-    | Some v1, Some v2 -> eval_operation v1 v2
+    | Some v1, Some v2 -> 
+      let is_exact (lower, upper) = Float.compare lower upper == 0 in
+      let is_exact_before = is_exact v1 && is_exact v2 in
+      let result = eval_operation v1 v2
+      in if is_exact_before then 
+        (match result with
+         | Some (r1, r2) ->
+           let is_exact_after = is_exact (r1, r2)
+           in if not is_exact_after then 
+             Messages.warn
+               ~category:Messages.Category.FloatMessage 
+               ~tags:[] (* TODO: Which CWE numbers might fit here?*)
+               "The result of this operation is not exact."; 
+           result
+         | None -> None)
+      else result
     | _ -> None
 
   let eval_int_binop eval_operation (op1: t) op2 =
