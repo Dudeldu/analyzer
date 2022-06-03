@@ -2,6 +2,14 @@ open Pretty
 open PrecisionUtil
 open Round
 
+(**for ana.float.interval_threshold_widening *)
+let widening_thresholds = ResettableLazy.from_fun WideningThresholds.thresholds_float
+let widening_thresholds_desc = ResettableLazy.from_fun (Batteries.(%) List.rev WideningThresholds.thresholds_float)
+
+let reset_lazy () =
+  ResettableLazy.reset widening_thresholds;
+  ResettableLazy.reset widening_thresholds_desc
+
 module type FloatArith = sig
   type t
 
@@ -146,21 +154,26 @@ module FloatInterval = struct
       else failwith "meet results in empty Interval"
 
   (** [widen x y] assumes [leq x y]. Solvers guarantee this by calling [widen old (join old new)]. *)
-  let widen v1 v2 = (**TODO: support 'threshold_widening' option *)
+  let widen v1 v2 =
+    let use_threshold = GobConfig.get_bool "ana.float.interval_threshold_widening" in
+    let low_threshold l =
+      let ts = ResettableLazy.force widening_thresholds_desc in
+      let t = List.find_opt (fun x -> Float.is_finite x && x <= l) ts in
+      BatOption.default (-.Float.max_float) t
+    in
+    let high_threshold h =
+      let ts = ResettableLazy.force widening_thresholds in
+      let t = List.find_opt (fun x -> Float.is_finite x && x >= h) ts in
+      BatOption.default (Float.max_float) t
+    in
     match v1, v2 with
     | None, _ | _, None -> None
     | Some (l1, h1), Some (l2, h2) ->
-      (**If we widen and we know that neither interval contains +-inf or nan, it is ok to widen only to +-max_float, 
-         because a widening with +-inf/nan will always result in the case above -> Top *)
-      let low = if l1 <= l2 then l1 else (-.Float.max_float) in 
-      let high = if h1 >= h2 then h1 else Float.max_float in
-      norm @@ Some (low, high)
-
-  let widen v1 v2 = 
-    if GobConfig.get_bool "ana.float.interval_threshold_widening" then
-      widen v1 v2 (**TODO implement threshold widening *)
-    else
-      widen v1 v2
+      let lt = if use_threshold then low_threshold l2 else (-.Float.max_float) in
+      let l = if l1 <= l2 then l1 else lt in
+      let ht = if use_threshold then high_threshold h2 else (Float.max_float) in
+      let h = if h1 >= h2 then h1 else ht in
+      norm @@ Some (l, h)
 
   let narrow v1 v2 =
     match v1, v2 with (**we cannot distinguish between the lower bound beeing -inf or the upper bound beeing inf. Also there is nan *)

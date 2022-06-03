@@ -17,7 +17,8 @@ class extractConstantsVisitor(widening_thresholds,widening_thresholds_incl_mul2,
       widening_thresholds_incl_mul2 := Thresholds.add (Z.mul (Z.of_int 2) i) !widening_thresholds_incl_mul2;
       DoChildren
     | Const (CReal(f,FDouble,_)) -> (**TODO: include other fkinds, if we support them *)
-      widening_thresholds_float := ThresholdsFloat.add f !widening_thresholds_float;
+      (** Only add finite constants. Infinite ones (+-inf/nan) are not useful for threshold_widening*)
+      if Float.is_finite f then widening_thresholds_float := ThresholdsFloat.add f !widening_thresholds_float;
       DoChildren
     | _ -> DoChildren
 end

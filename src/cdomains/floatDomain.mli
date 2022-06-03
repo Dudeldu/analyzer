@@ -1,6 +1,8 @@
 (** Abstract Domains for floats. These are domains that support the C
   * operations on double/float values. *)
 
+val reset_lazy: unit -> unit
+
 module type FloatArith = sig
   type t
 

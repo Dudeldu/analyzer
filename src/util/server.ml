@@ -151,6 +151,7 @@ let analyze ?(reset=false) (s: t) =
   Cilfacade.reset_lazy ();
   WideningThresholds.reset_lazy ();
   IntDomain.reset_lazy ();
+  FloatDomain.reset_lazy ();
   ApronDomain.reset_lazy ();
   Access.reset ();
   s.file <- file;
