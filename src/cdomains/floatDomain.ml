@@ -94,14 +94,6 @@ module FloatInterval = struct
     | Some (l, h) when l = h -> Some l
     | _ -> None
 
-  let maximal = function
-    | Some (_, h) -> Some h
-    | _ -> None
-
-  let minimal = function
-    | Some (l, _) -> Some l
-    | _ -> None
-
   let hash = Hashtbl.hash
 
   let pretty () x = text (show x)
@@ -154,8 +146,6 @@ module FloatInterval = struct
   let ending end_value = of_interval (-. max_float, end_value)
   let starting start_value = of_interval (start_value, max_float)
   let of_const f = of_interval (f, f)
-
-  let relift x = x 
 
   let leq v1 v2 = 
     match v1, v2 with

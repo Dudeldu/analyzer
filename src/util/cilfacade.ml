@@ -339,7 +339,7 @@ let rec get_ikind t =
     Messages.warn "Something that we expected to be an integer type has a different type, assuming it is an IInt";
     Cil.IInt
 
-let rec get_fkind t =
+let get_fkind t =
   (* important to unroll the type here, otherwise problems with typedefs *)
   match Cil.unrollType t with
   | TFloat (fk,_) -> fk
