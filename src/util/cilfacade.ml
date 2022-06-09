@@ -326,6 +326,14 @@ let rec get_ikind t =
     Messages.warn "Something that we expected to be an integer type has a different type, assuming it is an IInt";
     Cil.IInt
 
+let get_fkind t =
+  (* important to unroll the type here, otherwise problems with typedefs *)
+  match Cil.unrollType t with
+  | TFloat (fk,_) -> fk
+  | _ ->
+    Messages.warn "Something that we expected to be a float type has a different type, assuming it is an FDouble";
+    Cil.FDouble
+
 let ptrdiff_ikind () = get_ikind !ptrdiffType
 
 
@@ -445,6 +453,7 @@ and typeOffset basetyp =
 
 
 let get_ikind_exp e = get_ikind (typeOf e)
+let get_fkind_exp e = get_fkind (typeOf e)
 
 
 (** HashSet of line numbers *)
