@@ -19,8 +19,4 @@ void main()
     // As numbers this big cannot be represented exactly anymore by double, this "- 1" will get
     // completely consumed.
     double max_minus_one = my_max - 1; // WARN
-
-    printf("%f\n", my_max);
-    printf("%f\n", max_minus_one);
-    printf("%d\n", (max_minus_one == my_max));
 }
