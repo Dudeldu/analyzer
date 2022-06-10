@@ -1,21 +1,24 @@
 open OUnit2
 open FloatOps
 
-module FloatInterval =
+module FloatInterval(Float_t: CFloatType)(Domain_t: FloatDomain.FloatDomainBase) =
 struct
-  module FI = FloatDomain.F64Interval
+  module FI = Domain_t
   module IT = IntDomain.IntDomTuple
 
-  let to_float = FloatOps.CDouble.to_float
-  let of_float = FloatOps.CDouble.of_float
-  let add = FloatOps.CDouble.add
-  let sub = FloatOps.CDouble.sub
-  let mul = FloatOps.CDouble.mul
-  let div = FloatOps.CDouble.div
+  let to_float = Float_t.to_float
+  let of_float = Float_t.of_float
+  let add = Float_t.add
+  let sub = Float_t.sub
+  let mul = Float_t.mul
+  let div = Float_t.div
 
-  let fmax =  Float.max_float
-  let fmin = -. Float.max_float
-  let fsmall = Float.min_float
+  let pred x = Option.get (to_float (Float_t.pred (of_float Nearest x)))
+  let succ x = Option.get (to_float (Float_t.succ (of_float Nearest x)))
+
+  let fmax = Option.get (to_float Float_t.upper_bound)
+  let fmin = Option.get (to_float Float_t.lower_bound)
+  let fsmall = Option.get (to_float Float_t.smallest)
 
   let fi_zero = FI.of_const 0.
   let fi_one = FI.of_const 1.
@@ -44,12 +47,12 @@ struct
       fi_neg_one + fi_one = fi_zero;
       fi_one + (FI.of_const fmax) = FI.top ();
       fi_neg_one + (FI.of_const fmin) = FI.top ();
-      fi_neg_one + (FI.of_const fmax) = (FI.of_interval ((Float.pred fmax), fmax));
-      fi_one + (FI.of_const fmin) = (FI.of_interval (fmin, Float.succ fmin));
+      fi_neg_one + (FI.of_const fmax) = (FI.of_interval ((pred fmax), fmax));
+      fi_one + (FI.of_const fmin) = (FI.of_interval (fmin, succ fmin));
       FI.top () + FI.top () = FI.top ();
       (FI.of_const fmin) + (FI.of_const fmax) = fi_zero;
       (FI.of_const fsmall) + (FI.of_const fsmall) = FI.of_const (fsmall +. fsmall);
-      (FI.of_const fsmall) + (FI.of_const 1.) = FI.of_interval (1., Float.succ (1. +. fsmall));
+      (FI.of_const fsmall) + (FI.of_const 1.) = FI.of_interval (1., succ (1. +. fsmall));
       (FI.of_interval (1., 2.)) + (FI.of_interval (2., 3.)) = FI.of_interval (3., 5.);
       (FI.of_interval (-. 2., 3.)) + (FI.of_interval (-. 100., 20.)) = FI.of_interval (-. 102., 23.);
     end
@@ -62,12 +65,12 @@ struct
       fi_neg_one - fi_one = FI.of_const (-. 2.);
       fi_one - (FI.of_const fmin) = FI.top ();
       fi_neg_one - (FI.of_const fmax) = FI.top ();
-      (FI.of_const fmax) - fi_one = (FI.of_interval ((Float.pred fmax), fmax));
-      (FI.of_const fmin) - fi_neg_one = (FI.of_interval (fmin, Float.succ fmin));
+      (FI.of_const fmax) - fi_one = (FI.of_interval ((pred fmax), fmax));
+      (FI.of_const fmin) - fi_neg_one = (FI.of_interval (fmin, succ fmin));
       FI.top () - FI.top () = FI.top ();
       (FI.of_const fmax) - (FI.of_const fmax) = fi_zero;
       (FI.of_const fsmall) - (FI.of_const fsmall) = fi_zero;
-      (FI.of_const fsmall) - (FI.of_const 1.) = FI.of_interval (-. 1., Float.succ (-. 1.));
+      (FI.of_const fsmall) - (FI.of_const 1.) = FI.of_interval (-. 1., succ (-. 1.));
       (FI.of_interval (-. 2., 3.)) - (FI.of_interval (-. 100., 20.)) = FI.of_interval (-. 22., 103.);
       (FI.of_const (-. 0.)) - fi_zero = fi_zero
     end
@@ -87,8 +90,12 @@ struct
       (FI.of_const fmax) * fi_one = FI.of_const fmax;
       (FI.of_const 2.) * (FI.of_const 0.5) = fi_one;
       (FI.of_interval (-. 2., 3.)) * (FI.of_interval (-. 100., 20.)) = FI.of_interval (-. 300., 200.);
-      (FI.of_const 1.00000000000000111) * (FI.of_const 1.00000000000000111) = FI.of_interval (1.00000000000000222 , Float.succ 1.00000000000000222);
-      (FI.of_const (-. 1.00000000000000111)) * (FI.of_const 1.00000000000000111) = FI.of_interval (Float.pred (-. 1.00000000000000222), -. 1.00000000000000222)
+
+      let up = if Float_t.name <> "float" then succ 1.00000000000000222 else succ (succ 1.00000000000000111 *. succ 1.00000000000000111) in
+      begin
+        (FI.of_const 1.00000000000000111) * (FI.of_const 1.00000000000000111) = FI.of_interval (1.00000000000000222 , up);
+        (FI.of_const (-. 1.00000000000000111)) * (FI.of_const 1.00000000000000111) = FI.of_interval (-. up, -. 1.00000000000000222)
+      end
     end
 
   let test_FI_div_specific _ =
@@ -111,9 +118,8 @@ struct
       (FI.of_interval (-. 2., 3.)) / (FI.of_interval (-. 100., 20.)) = FI.top ();
       (FI.of_interval (6., 10.)) / (FI.of_interval (2., 3.)) = (FI.of_interval (2., 5.));
 
-      (FI.of_const 1.00000000000000111) / (FI.of_const 1.00000000000000111) = fi_one;
-      (FI.of_const 1.) / (FI.of_const 3.) = (FI.of_interval (Float.pred 0.333333333333333370340767487505, 0.333333333333333370340767487505));
-      (FI.of_const (-. 1.)) / (FI.of_const 3.) = (FI.of_interval (-. 0.333333333333333370340767487505, Float.succ (-. 0.333333333333333370340767487505)))
+      (FI.of_const 1.) / (FI.of_const 3.) = (FI.of_interval (pred 0.333333333333333370340767487505, 0.333333333333333370340767487505));
+      (FI.of_const (-. 1.)) / (FI.of_const 3.) = (FI.of_interval (-. 0.333333333333333370340767487505, succ (-. 0.333333333333333370340767487505)))
     end
 
   let test_FI_casti2f_specific _ =
@@ -216,9 +222,9 @@ struct
       check_widen (FI.top ()) (FI.top ()) (FI.top ());
       check_widen fi_zero (FI.top ()) (FI.top ());
       check_widen (FI.top ()) fi_one (FI.top ());
-      check_widen fi_zero fi_one (FI.of_interval (0., Float.max_float));
-      check_widen fi_one fi_zero (FI.of_interval (-. Float.max_float, 1.));
-      check_widen fi_one (FI.of_interval (0., 2.)) (FI.of_interval (-. Float.max_float, Float.max_float));
+      check_widen fi_zero fi_one (FI.of_interval (0., fmax));
+      check_widen fi_one fi_zero (FI.of_interval (fmin, 1.));
+      check_widen fi_one (FI.of_interval (0., 2.)) (FI.of_interval (fmin, fmax));
     end
 
   let test_FI_narrow_specific _ =
@@ -319,11 +325,15 @@ struct
     ]
 end
 
+module FloatIntervalTest32 = FloatInterval(CFloat)(FloatDomain.F32Interval)
+module FloatIntervalTest64 = FloatInterval(CDouble)(FloatDomain.F64Interval)
 
 let test () = 
   "floatDomainTest" >:::
   [ 
-    "float_interval" >::: FloatInterval.test ();
-    "float_interval_qcheck" >::: FloatInterval.test_qcheck ();
+    "float_interval32" >::: FloatIntervalTest32.test ();
+    "float_interval_qcheck32" >::: FloatIntervalTest32.test_qcheck ();
+    "float_interval64" >::: FloatIntervalTest64.test ();
+    "float_interval_qcheck64" >::: FloatIntervalTest64.test_qcheck ();
   ]
 

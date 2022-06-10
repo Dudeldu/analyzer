@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <float.h>
 #include <fenv.h>
 #include <assert.h>
 #include <caml/mlvalues.h>
@@ -38,8 +39,8 @@ static void change_round_mode(int mode)
 #define BINARY_OP(name, type, op)                                \
     CAMLprim value name##_##type(value mode, value x, value y)   \
     {                                                            \
-        volatile type r, x1 = Double_val(x), y1 = Double_val(y); \
         change_round_mode(Int_val(mode));                        \
+        volatile type r, x1 = Double_val(x), y1 = Double_val(y); \
         r = x1 op y1;                                            \
         change_round_mode(Nearest);                              \
         return caml_copy_double(r);                              \
@@ -72,4 +73,15 @@ CAMLprim value atof_float(value mode, value str)
     r = (float)atof(s);
     change_round_mode(Nearest);
     return caml_copy_double(r);
+}
+
+
+CAMLprim value max_float(value unit)
+{
+    return caml_copy_double(FLT_MAX);
+}
+
+CAMLprim value smallest_float(value unit)
+{
+    return caml_copy_double(FLT_MIN);
 }

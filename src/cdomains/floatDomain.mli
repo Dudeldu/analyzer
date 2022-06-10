@@ -51,12 +51,8 @@ module type FloatDomainBase = sig
 end
 
 (* Only required for testing *)
-module F64Interval : sig
-  include FloatDomainBase
-end
-module F32Interval : sig
-  include FloatDomainBase
-end
+module F64Interval : FloatDomainBase
+module F32Interval : FloatDomainBase
 
 module type FloatDomain = sig
   include Lattice.S

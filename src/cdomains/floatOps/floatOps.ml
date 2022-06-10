@@ -7,9 +7,11 @@ type round_mode =
 module type CFloatType = sig
   type t
 
+  val name: string
   val zero: t
   val upper_bound: t
   val lower_bound: t
+  val smallest : t
 
   val of_float: round_mode -> float -> t
   val to_float: t -> float option
@@ -19,7 +21,6 @@ module type CFloatType = sig
   val pred: t -> t
   val succ: t -> t
 
-  val arbitrary: unit -> t QCheck.arbitrary
   val equal: t -> t -> bool
   val compare: t -> t -> int
   val to_yojson: t -> Yojson.Safe.t
@@ -44,9 +45,11 @@ let big_int_of_float f =
 module CDouble = struct
   type t = float [@@deriving eq, ord, to_yojson]
 
+  let name = "double"
   let zero = Float.zero
   let upper_bound = Float.max_float
   let lower_bound = -. Float.max_float
+  let smallest = Float.min_float
 
   let of_float _ x = x
   let to_float x = Some x
@@ -56,7 +59,6 @@ module CDouble = struct
   let pred = Float.pred
   let succ = Float.succ
 
-  let arbitrary () = QCheck.float
   let to_string = Float.to_string
 
   let neg = Float.neg
@@ -71,18 +73,21 @@ end
 module CFloat = struct
   type t = float [@@deriving eq, ord, to_yojson]
 
+  let name = "float"
   let zero = Float.zero
-  let upper_bound = 3.402823e+38
-  let lower_bound = -. 3.402823e+38
+
+  external upper': unit -> float = "max_float"
+  external smallest': unit -> float = "smallest_float"
+
+  let upper_bound = upper' ()
+  let lower_bound = -. upper_bound
+  let smallest = smallest' ()
 
   let to_float x = Some x
   let to_big_int = big_int_of_float
 
-  let is_finite = Float.is_finite
-  let pred = Float.pred
-  let succ = Float.succ
+  let is_finite x = Float.is_finite x && x >= lower_bound && x <= upper_bound 
 
-  let arbitrary () = QCheck.float
   let to_string = Float.to_string
 
   let neg = Float.neg
@@ -94,4 +99,6 @@ module CFloat = struct
   external atof: round_mode -> string -> t = "atof_float"
 
   let of_float mode x = add mode zero x
+  let pred x = of_float Down (Float.pred x)
+  let succ x = of_float Up (Float.succ x)
 end

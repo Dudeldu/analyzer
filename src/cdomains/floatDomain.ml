@@ -77,8 +77,8 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
     | _, _ -> None
 
   let show = function
-    | None -> "Float[Top]"
-    | Some (low, high) -> Printf.sprintf "Float [%s,%s]" (Float_t.to_string low) (Float_t.to_string high)
+    | None -> Float_t.name ^ ": [Top]"
+    | Some (low, high) -> Printf.sprintf "%s:[%s,%s]" Float_t.name (Float_t.to_string low) (Float_t.to_string high)
 
   let pretty () x = text (show x)
 
@@ -118,23 +118,26 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
   let norm_arb v = 
     match v with
     | Some (f1, f2) ->
-      if Float_t.is_finite f1 && Float_t.is_finite f2 
-      then Some(min f1 f2, max f1 f2) 
+      let f1' = Float_t.of_float Nearest f1 in
+      let f2' = Float_t.of_float Nearest f2 in
+      if Float_t.is_finite f1' && Float_t.is_finite f2' 
+      then Some(min f1' f2', max f1' f2') 
       else None
     | _ -> None
 
   (**for QCheck: should describe how to generate random values and shrink possible counter examples *)
-  let arbitrary () = QCheck.map norm_arb (QCheck.option (QCheck.pair (Float_t.arbitrary ()) (Float_t.arbitrary ()))) 
+  let arbitrary () = QCheck.map norm_arb (QCheck.option (QCheck.pair QCheck.float QCheck.float)) 
 
-  let of_interval (l, h) = norm @@ Some (Float_t.of_float Down (min l h), Float_t.of_float Up (max l h))
+  let of_interval' interval = norm @@ Some interval
+  let of_interval (l, h) = of_interval' (Float_t.of_float Down (min l h), Float_t.of_float Up (max l h))
+  let of_string s = of_interval' (Float_t.atof Down s, Float_t.atof Up s)
   let of_const f = of_interval (f, f)
-  let of_string s = norm @@ Some (Float_t.atof Down s, Float_t.atof Up s)
 
-  let ending end_value = of_interval (-. max_float, end_value)
-  let starting start_value = of_interval (start_value, max_float)
+  let ending e = of_interval' (Float_t.lower_bound, Float_t.of_float Up e)
+  let starting s = of_interval' (Float_t.of_float Down s, Float_t.upper_bound)
 
-  let minimal = function Some (l, v) -> Float_t.to_float l | _ -> None
-  let maximal = function Some (l, v) -> Float_t.to_float v | _ -> None
+  let minimal x = Option.bind x (fun (l, _) -> Float_t.to_float l)
+  let maximal x = Option.bind x (fun (_, h) -> Float_t.to_float h)
 
   let is_exact = function Some (l, v) -> l = v | _ -> false
 
@@ -334,7 +337,10 @@ module FloatIntervalImplLifted = struct
   let dispatch_fkind fkind (op32, op64) = match fkind with
     | FFloat -> F32 (op32 ())
     | FDouble -> F64 (op64 ()) 
-    | _ -> failwith "unsupported fkind"
+    | _ -> 
+      (* this sould never be reached, as we have to check for invalid fkind elsewhere, 
+         however we could instead of crashing also return top_of some fkind to vaid this and nonetheless have no actual information about anything*)
+      failwith "unsupported fkind" 
 
   let neg = function 
     | F32 x -> F32 (F1.neg x)
@@ -351,10 +357,10 @@ module FloatIntervalImplLifted = struct
   let ne = lift2_cmp (F1.ne, F2.ne)
 
   let bot_of fkind = dispatch_fkind fkind (F1.bot, F2.bot)
-  let bot () = failwith "bot () is not implemented for IntDomLifter."
+  let bot () = failwith "bot () is not implemented for FloatIntervalImplLifted."
   let is_bot = dispatch (F1.is_bot, F2.is_bot)
   let top_of fkind = dispatch_fkind fkind (F1.top, F2.top)
-  let top () = failwith "top () is not implemented for IntDomLifter."
+  let top () = failwith "top () is not implemented for FloatIntervalImplLifted."
   let is_top = dispatch (F1.is_bot, F2.is_bot)
 
   let precision = dispatch ((fun _ -> FFloat), (fun _ -> FDouble))
@@ -430,8 +436,8 @@ module FloatDomTupleImpl = struct
   let opt_map2 f =
     curry @@ function Some x, Some y -> Some (f x y) | _ -> None
 
-  let exists = function Some true -> true | _ -> false
-  let for_all = function Some false -> false | _ -> true
+  let exists = Option.default false
+  let for_all = Option.default true
 
   let mapp r = BatOption.map (r.fp (module F1))
 
@@ -488,25 +494,15 @@ module FloatDomTupleImpl = struct
     for_all
     % mapp { fp= (fun (type a) (module F : FloatDomain with type t = a) -> F.is_top); }
 
-  let precision = function
-    | Some f -> F1.precision f
-    | None -> failwith "invalid"
+  let precision = Option.map_default F1.precision FDouble
 
-  let minimal = function
-    | Some f -> F1.minimal f
-    | None -> None
-
-  let maximal = function
-    | Some f -> F1.maximal f
-    | None -> None
+  let minimal x = Option.bind x F1.minimal
+  let maximal x = Option.bind x F1.maximal
 
   let of_int fkind =
     create { fi= (fun (type a) (module F : FloatDomain with type t = a) -> F.of_int fkind); }
 
-  let to_int ik x =
-    match x with
-    | Some f -> F1.to_int ik f
-    | None -> IntDomain.IntDomTuple.top_of ik
+  let to_int ik = Option.map_default (F1.to_int ik) (IntDomain.IntDomTuple.top_of ik)
 
   let cast_to fkind =
     map { f1= (fun (type a) (module F : FloatDomain with type t = a) -> (fun x -> F.cast_to fkind x)); }

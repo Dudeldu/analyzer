@@ -1708,7 +1708,7 @@ struct
         inv_exp (`Int c') e st
       | UnOp (Neg, e, _), `Float c -> inv_exp (`Float (unop_FD Neg c)) e st
       | UnOp ((BNot|Neg) as op, e, _), `Int c -> inv_exp (`Int (unop_ID op c)) e st
-      (* no equivalent for `Float so far, as VD.is_safe_cast fails for all float types anyways *)
+      (* no equivalent for `Float, as VD.is_safe_cast fails for all float types anyways *)
       | BinOp(op, CastE (t1, c1), CastE (t2, c2), t), `Int c when (op = Eq || op = Ne) && typeSig (Cilfacade.typeOf c1) = typeSig (Cilfacade.typeOf c2) && VD.is_safe_cast t1 (Cilfacade.typeOf c1) && VD.is_safe_cast t2 (Cilfacade.typeOf c2) ->
         inv_exp (`Int c) (BinOp (op, c1, c2, t)) st
       | (BinOp (op, e1, e2, _) as e, `Float _)
@@ -1724,14 +1724,14 @@ struct
            let st'' = inv_exp (`Int b') e2 st' in
            st''
          | `Float a, `Float b ->
-           let fkind = Cilfacade.get_fkind_exp e1 in (* both operands have the same type (except for Shiftlt, Shiftrt)! *)
+           let fkind = Cilfacade.get_fkind_exp e1 in (* both operands have the same type *)
            let a', b' = inv_bin_float (a, b) fkind (c_float fkind) op in
            if M.tracing then M.tracel "inv" "binop: %a, a': %a, b': %a\n" d_exp e FD.pretty a' FD.pretty b';
            let st' = inv_exp (`Float a') e1 st in
            let st'' = inv_exp (`Float b') e2 st' in
            st''
-         (* Mixed `Float and `Int cases should never happen, TODO: make this sure ?!*)
-         | `Int _, `Float _ | `Float _, `Int _ -> failwith "todo - probably ill-typed program";
+         (* Mixed `Float and `Int cases should never happen, as there are no binary operators with one float and one int parameter ?!*)
+         | `Int _, `Float _ | `Float _, `Int _ -> failwith "ill-typed program";
          (* | `Address a, `Address b -> ... *)
          | a1, a2 -> fallback ("binop: got abstract values that are not `Int: " ^ sprint VD.pretty a1 ^ " and " ^ sprint VD.pretty a2) st)
          (* use closures to avoid unused casts *)
@@ -1779,8 +1779,13 @@ struct
              | _ -> `Float c) FD.pretty
          | _ -> failwith "unreachable")
       | Const _ , _ -> st (* nothing to do *)
-      | CastE ((TFloat (FDouble as fkind, _)), e), `Float c
-      | CastE ((TFloat (FFloat as fkind, _)), e), `Float c -> inv_exp (`Float (FD.cast_to fkind c)) e st
+      | CastE ((TFloat (_, _)), e), `Float c ->
+        (match Cilfacade.typeOf e, FD.precision c with
+         | TFloat (FDouble as fk, _), FFloat
+         | TFloat (FDouble as fk, _), FDouble
+         | TFloat (FFloat as fk, _), FFloat -> inv_exp (`Float (FD.cast_to fk c)) e st
+         | TFloat (FFloat, _), FDouble -> fallback ("CastE: e evaluates to FFloat which can not be used as FDouble") st
+         | _ -> fallback ("CastE: e has not type TFloat") st)
       | CastE ((TInt (ik, _)) as t, e), `Int c
       | CastE ((TEnum ({ekind = ik; _ }, _)) as t, e), `Int c -> (* Can only meet the t part of an Lval in e with c (unless we meet with all overflow possibilities)! Since there is no good way to do this, we only continue if e has no values outside of t. *)
         (match eval e st with
@@ -1795,7 +1800,6 @@ struct
              | x -> fallback ("CastE: e did evaluate to `Int, but the type did not match" ^ sprint d_type t) st
            else
              fallback ("CastE: " ^ sprint d_plainexp e ^ " evaluates to " ^ sprint ID.pretty i ^ " which is bigger than the type it is cast to which is " ^ sprint d_type t) st
-         | `Float f -> inv_exp (`Float (FD.of_int (FD.precision f) c)) e st
          | v -> fallback ("CastE: e did not evaluate to `Int, but " ^ sprint VD.pretty v) st)
       | e, _ -> fallback (sprint d_plainexp e ^ " not implemented") st
     in

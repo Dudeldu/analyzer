@@ -7,9 +7,11 @@ type round_mode =
 module type CFloatType = sig
   type t
 
+  val name: string
   val zero: t
   val upper_bound: t
   val lower_bound: t
+  val smallest : t
 
   val of_float: round_mode -> float -> t
   val to_float: t -> float option
@@ -19,7 +21,6 @@ module type CFloatType = sig
   val pred: t -> t
   val succ: t -> t
 
-  val arbitrary: unit -> t QCheck.arbitrary
   val equal: t -> t -> bool
   val compare: t -> t -> int
   val to_yojson: t -> Yojson.Safe.t
