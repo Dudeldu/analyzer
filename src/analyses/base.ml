@@ -262,7 +262,7 @@ struct
     | `Float v1, `Float v2 when is_int_returning_binop_FD op -> 
       let result_ik = Cilfacade.get_ikind t in
       `Int (ID.cast_to result_ik (int_returning_binop_FD op v1 v2))
-    | `Float v1, `Float v2 -> `Float (binop_FD (Cilfacade.get_fkind t) op v1 v2) (* TODO: add get_fkind once merged *)
+    | `Float v1, `Float v2 -> `Float (binop_FD (Cilfacade.get_fkind t) op v1 v2)
     (* For address +/- value, we try to do some elementary ptr arithmetic *)
     | `Address p, `Int n
     | `Int n, `Address p when op=Eq || op=Ne ->
@@ -731,6 +731,9 @@ struct
       | Const (CReal (_, (FDouble as fkind), Some str)) -> `Float (FD.of_string fkind str) (* prefer parsing from string due to higher precision *)
       | Const (CReal (num, (FFloat as fkind), None))
       | Const (CReal (num, (FDouble as fkind), None)) -> `Float (FD.of_const fkind num)
+      (* this is so far only for DBL_MIN/DBL_MAX as it is represented as LongDouble although it would fit into a double as well *)
+      | Const (CReal (_, (FLongDouble), Some str)) when str = "2.2250738585072014e-308L" -> `Float (FD.of_string FDouble str)
+      | Const (CReal (_, (FLongDouble), Some str)) when str = "1.7976931348623157e+308L" -> `Float (FD.of_string FDouble str)
       (* String literals *)
       | Const (CStr (x,_)) -> `Address (AD.from_string x) (* normal 8-bit strings, type: char* *)
       | Const (CWStr (xs,_) as c) -> (* wide character strings, type: wchar_t* *)
