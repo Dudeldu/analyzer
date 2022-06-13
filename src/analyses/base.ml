@@ -727,10 +727,8 @@ struct
       | Const (CInt (num,ikind,str)) ->
         (match str with Some x -> M.tracel "casto" "CInt (%s, %a, %s)\n" (Cilint.string_of_cilint num) d_ikind ikind x | None -> ());
         `Int (ID.cast_to ikind (IntDomain.of_const (num,ikind,str)))
-      | Const (CReal (_, (FFloat as fkind), Some str))
-      | Const (CReal (_, (FDouble as fkind), Some str)) -> `Float (FD.of_string fkind str) (* prefer parsing from string due to higher precision *)
-      | Const (CReal (num, (FFloat as fkind), None))
-      | Const (CReal (num, (FDouble as fkind), None)) -> `Float (FD.of_const fkind num)
+      | Const (CReal (_, (FFloat | FDouble as fkind), Some str)) -> `Float (FD.of_string fkind str) (* prefer parsing from string due to higher precision *)
+      | Const (CReal (num, (FFloat | FDouble as fkind), None)) -> `Float (FD.of_const fkind num)
       (* this is so far only for DBL_MIN/DBL_MAX as it is represented as LongDouble although it would fit into a double as well *)
       | Const (CReal (_, (FLongDouble), Some str)) when str = "2.2250738585072014e-308L" -> `Float (FD.of_string FDouble str)
       | Const (CReal (_, (FLongDouble), Some str)) when str = "1.7976931348623157e+308L" -> `Float (FD.of_string FDouble str)

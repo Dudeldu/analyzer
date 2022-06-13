@@ -148,9 +148,7 @@ struct
     match t with
     | t when is_mutex_type t -> `Top
     | TInt (ik,_) -> `Int (ID.top_of ik)
-    | TFloat (FFloat as fkind, _)
-    | TFloat (FDouble as fkind, _) -> `Float (FD.top_of fkind)
-    | TFloat (fk, _) -> `Top (* TODO(Practical2022): extend to other floating point types *)
+    | TFloat (FFloat | FDouble as fkind, _) -> `Float (FD.top_of fkind)
     | TPtr _ -> `Address AD.top_ptr
     | TComp ({cstruct=true; _} as ci,_) -> `Struct (Structs.create (fun fd -> init_value fd.ftype) ci)
     | TComp ({cstruct=false; _},_) -> `Union (Unions.top ())
@@ -166,9 +164,7 @@ struct
   let rec top_value (t: typ): t =
     match t with
     | TInt (ik,_) -> `Int (ID.(cast_to ik (top_of ik)))
-    | TFloat (FFloat as fkind, _)
-    | TFloat (FDouble as fkind, _) -> `Float (FD.top_of fkind)
-    | TFloat (fk, _) -> `Top (* TODO(Practical2022): extend to other floating point types *)
+    | TFloat (FFloat | FDouble as fkind, _) -> `Float (FD.top_of fkind)
     | TPtr _ -> `Address AD.top_ptr
     | TComp ({cstruct=true; _} as ci,_) -> `Struct (Structs.create (fun fd -> top_value fd.ftype) ci)
     | TComp ({cstruct=false; _},_) -> `Union (Unions.top ())
@@ -197,8 +193,7 @@ struct
     let rec zero_init_value (t:typ): t =
       match t with
       | TInt (ikind, _) -> `Int (ID.of_int ikind BI.zero)
-      | TFloat (FFloat as fkind, _)
-      | TFloat (FDouble as fkind, _) -> `Float (FD.of_const fkind 0.0)
+      | TFloat (FFloat | FDouble as fkind, _) -> `Float (FD.of_const fkind 0.0)
       | TPtr _ -> `Address AD.null_ptr
       | TComp ({cstruct=true; _} as ci,_) -> `Struct (Structs.create (fun fd -> zero_init_value fd.ftype) ci)
       | TComp ({cstruct=false; _} as ci,_) ->
@@ -376,12 +371,6 @@ struct
       let log_top (_,l,_,_) = Messages.tracel "cast" "log_top at %d: %a to %a is top!\n" l pretty v d_type t in
       let t = unrollType t in
       let v' = match t with
-        | TFloat (FFloat as fkind,_)
-        | TFloat (FDouble as fkind,_) ->
-          (match v with
-           |`Int ix ->  `Float (FD.of_int fkind ix)
-           |`Float fx ->  `Float (FD.cast_to fkind fx)
-           | _ -> log_top __POS__; `Top)
         | TInt (ik,_) ->
           `Int (ID.cast_to ?torg ik (match v with
               | `Int x -> x
@@ -394,6 +383,11 @@ struct
                 (match Structs.get x first with `Int x -> x | _ -> raise CastError)*)
               | _ -> log_top __POS__; ID.top_of ik
             ))
+        | TFloat (FFloat | FDouble as fkind,_) ->
+          (match v with
+           |`Int ix ->  `Float (FD.of_int fkind ix)
+           |`Float fx ->  `Float (FD.cast_to fkind fx)
+           | _ -> log_top __POS__; `Top)
         | TEnum ({ekind=ik; _},_) ->
           `Int (ID.cast_to ?torg ik (match v with
               | `Int x -> (* TODO warn if x is not in the constant values of ei.eitems? (which is totally valid (only ik is relevant for wrapping), but might be unintended) *) x
