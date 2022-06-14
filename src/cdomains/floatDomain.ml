@@ -181,21 +181,19 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
   let eval_binop eval_operation op1 op2 =
     norm @@ match (op1, op2) with 
     | Some v1, Some v2 -> 
-      let is_exact (lower, upper) = Float.compare lower upper == 0 in
+      let is_exact (lower, upper) = (lower = upper) in
       let is_exact_before = is_exact v1 && is_exact v2 in
-      let result = eval_operation v1 v2
-      in if is_exact_before then 
-        (match result with
-         | Some (r1, r2) ->
-           let is_exact_after = is_exact (r1, r2)
-           in if not is_exact_after then 
-             Messages.warn
-               ~category:Messages.Category.FloatMessage 
-               ~tags:[CWE 197; CWE 681; CWE 1339]
-               "The result of this operation is not exact."; 
-           result
-         | None -> None)
-      else result
+      let result = eval_operation v1 v2 in
+      (match result with
+       | Some (r1, r2) ->
+         let is_exact_after = is_exact (r1, r2)
+         in if not is_exact_after && is_exact_before then 
+           Messages.warn
+             ~category:Messages.Category.FloatMessage 
+             ~tags:[CWE 197; CWE 681; CWE 1339]
+             "The result of this operation is not exact, even though the inputs were exact."; 
+         result
+       | _ -> None)
     | _ -> None
 
   let eval_int_binop eval_operation (op1: t) op2 =
