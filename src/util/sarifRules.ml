@@ -57,7 +57,6 @@ let rules = [
     helpUri="https://goblint.in.tum.de/home";
     longDescription="The program contains a code sequence that can run concurrently with other code, and the code sequence requires temporary, exclusive access to a shared resource, but a timing window exists in which the shared resource can be modified by another code sequence that is operating concurrently.";
   };
-  (* TODO: We'll want to add something like this "Integer Overflow" here also for our float! *)
   {
     name="Overflow";
     ruleId="GO0006";
