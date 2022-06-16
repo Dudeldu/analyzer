@@ -1692,12 +1692,12 @@ struct
     let rec inv_exp c exp (st:store): store =
       (* trying to improve variables in an expression so it is bottom means dead code *)
       (
-        match c_typed with
+        match c with
         | `Int c -> if ID.is_bot c then raise Deadcode
         | `Float c -> if FD.is_bot c then raise Deadcode
-        | _ -> if VD.is_bot c_typed then raise Deadcode
+        | _ -> if VD.is_bot c then raise Deadcode
       );
-      match exp, c_typed with
+      match exp, c with
       | UnOp (LNot, e, _), `Int c ->
         let ikind = Cilfacade.get_ikind_exp e in
         let c' =
@@ -1739,7 +1739,7 @@ struct
          (* | `Address a, `Address b -> ... *)
          | a1, a2 -> fallback ("binop: got abstract values that are not `Int: " ^ sprint VD.pretty a1 ^ " and " ^ sprint VD.pretty a2) st)
          (* use closures to avoid unused casts *)
-         in (match c_typed with 
+         in (match c with 
             | `Int c -> invert_binary_op c ID.pretty (fun ik -> ID.cast_to ik c) (fun fk -> FD.of_int fk c) 
             | `Float c -> invert_binary_op c FD.pretty (fun ik -> FD.to_int ik c) (fun fk -> FD.cast_to fk c)
             | _ -> failwith "unreachable")
@@ -1767,7 +1767,7 @@ struct
                 set' x v st
               )) in
         let t = Cil.unrollType (Cilfacade.typeOfLval x) in  (* unroll type to deal with TNamed *)
-        (match c_typed with 
+        (match c with 
          | `Int c -> update_lval c x (match t with
              | TPtr _ -> `Address (AD.of_int (module ID) c)
              | TInt (ik, _)
@@ -2343,7 +2343,7 @@ struct
         | None -> ctx.local
       end
     (**Floating point classification and unary trigonometric functions defined in c99*)
-    | `Unknown (("__builtin_isfinite" | "__builtin_isinf" | "__builtin_isinf_sign" | "__builtin_isnan" | "__builtin_isnormal" | "__builtin_signbit") as name) ->
+    | Unknown, (("__builtin_isfinite" | "__builtin_isinf" | "__builtin_isinf_sign" | "__builtin_isnan" | "__builtin_isnormal" | "__builtin_signbit") as name) ->
       begin match args with
         | [x] -> 
           let eval_x = eval_rv (Analyses.ask_of_ctx ctx) gs st x in
@@ -2360,7 +2360,7 @@ struct
                 end 
               in
               begin match lv with
-                | Some lv_val -> set ~ctx:(Some ctx) (Analyses.ask_of_ctx ctx) gs st (eval_lv (Analyses.ask_of_ctx ctx) ctx.global st lv_val) (Cilfacade.typeOfLval lv_val) result
+                | Some lv_val -> set ~ctx (Analyses.ask_of_ctx ctx) gs st (eval_lv (Analyses.ask_of_ctx ctx) ctx.global st lv_val) (Cilfacade.typeOfLval lv_val) result
                 | None -> st
               end
             | _ -> failwith ("non-floating-point argument in call to function "^name)
