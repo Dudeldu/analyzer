@@ -270,6 +270,10 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
     else (0, 1)
 
   let eval_ne (l1, h1) (l2, h2) =
+    Messages.warn 
+      ~category:Messages.Category.FloatMessage 
+      ~tags:[CWE 1077]
+      "Equality/Inequality between `double` is dangerous!";
     if h1 < l2 || h2 < l1 then (1, 1)
     else if h1 = l1 && h2 = l2 && l1 = l2 then (0, 0)
     else (0, 1)
