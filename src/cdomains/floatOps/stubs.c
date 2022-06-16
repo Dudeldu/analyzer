@@ -75,7 +75,6 @@ CAMLprim value atof_float(value mode, value str)
     return caml_copy_double(r);
 }
 
-
 CAMLprim value max_float(value unit)
 {
     return caml_copy_double(FLT_MAX);
@@ -85,3 +84,14 @@ CAMLprim value smallest_float(value unit)
 {
     return caml_copy_double(FLT_MIN);
 }
+
+CAMLprim value max_double(value unit)
+{
+    return caml_copy_double(DBL_MAX);
+}
+
+CAMLprim value smallest_double(value unit)
+{
+    return caml_copy_double(DBL_MIN);
+}
+

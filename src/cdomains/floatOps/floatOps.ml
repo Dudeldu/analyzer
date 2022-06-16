@@ -47,9 +47,13 @@ module CDouble = struct
 
   let name = "double"
   let zero = Float.zero
-  let upper_bound = Float.max_float
-  let lower_bound = -. Float.max_float
-  let smallest = Float.min_float
+
+  external upper': unit -> float = "max_double"
+  external smallest': unit -> float = "smallest_double"
+
+  let upper_bound = upper' ()
+  let lower_bound = -. upper' ()
+  let smallest = smallest' ()
 
   let of_float _ x = x
   let to_float x = Some x
