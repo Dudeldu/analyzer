@@ -4,7 +4,6 @@
 #include <float.h>
 
 int main() {
-    double dbl_min = 2.2250738585072014e-308;
     double inf = 1. / 0.;
     double nan = 0. / 0.;
 
@@ -30,9 +29,9 @@ int main() {
     assert(__builtin_isnan(nan)); //UNKNOWN
 
     //__buitin_isnormal(x):
-    assert(__builtin_isnormal(dbl_min)); //SUCCESS!
+    assert(__builtin_isnormal(DBL_MIN)); //SUCCESS!
     assert(__builtin_isnormal(0.0)); //FAIL!
-    assert(__builtin_isnormal(dbl_min / 2)); //FAIL!
+    assert(__builtin_isnormal(DBL_MIN / 2)); //FAIL!
     assert(__builtin_isnormal(inf)); //UNKNOWN
     assert(__builtin_isnormal(nan)); //UNKNOWN
 
