@@ -56,38 +56,38 @@ int main()
 
     if (a + 5.f < 10.f)
     {
-        assert(a < 5.); // SUCCESS!
+        assert(a <= 5.); // SUCCESS!
     }
     if (b + 5.f < 10.f)
     {
-        assert(b < 5.f); // SUCCESS!
+        assert(b <= 5.f); // SUCCESS!
     }
 
     if (a * 2. < 6.f)
     {
-        assert(a < 3.); // SUCCESS!
+        assert(a <= 3.); // SUCCESS!
     }
     if (b * 2.f < 6.f)
     {
-        assert(b < 3.f); // SUCCESS!
+        assert(b <= 3.f); // SUCCESS!
     }
 
     if (a / 3. > 10.)
     {
-        assert(a > 30.); // SUCCESS!
+        assert(a >= 30.); // SUCCESS!
     }
     if (b / 3.f > 10.f)
     {
-        assert(b > 30.); // SUCCESS!
+        assert(b >= 30.); // SUCCESS!
     }
 
     if (a < 10)
     {
-        assert(a < 10.); // SUCCESS!
+        assert(a <= 10.); // SUCCESS!
     }
     if (b < 10)
     {
-        assert(b < 10.f); // SUCCESS!
+        assert(b <= 10.f); // SUCCESS!
     }
 
     if (a > 1.)
