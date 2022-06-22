@@ -842,11 +842,21 @@ struct
           end
         | `Field (fld, offs) -> begin
             match x with
-            | `Union (`Lifted l_fld, valu) ->
-              let x = cast ~torg:l_fld.ftype fld.ftype valu in
-              let l', o' = shift_one_over l o in
-              do_eval_offset ask f x offs exp l' o' v t
-            | `Union (_, valu) -> top ()
+            | `Union (`Lifted l_fld, value) ->
+              (match value, fld.ftype with 
+               | `Float f_value, TInt(ikind, _) ->
+                 let x = FD.as_int ikind f_value in
+                 let l', o' = shift_one_over l o in
+                 do_eval_offset ask f (`Int x) offs exp l' o' v t
+               | `Int f_value, TFloat(fkind, _) ->
+                 let x = FD.reinterpret_int fkind f_value in
+                 let l', o' = shift_one_over l o in
+                  do_eval_offset ask f (`Float x) offs exp l' o' v t
+               | _ ->
+                 let x = cast ~torg:l_fld.ftype fld.ftype value in
+                 let l', o' = shift_one_over l o in
+                 do_eval_offset ask f x offs exp l' o' v t)
+            | `Union (_, value) -> top ()
             | `Top -> M.debug "Trying to read a field, but the union is unknown"; top ()
             | _ -> M.warn "Trying to read a field, but was not given a union"; top ()
           end

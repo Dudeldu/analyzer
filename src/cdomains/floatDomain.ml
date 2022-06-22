@@ -49,11 +49,13 @@ module type FloatDomainBase = sig
   include FloatArith with type t := t
 
   val to_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
+  val as_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
 
   val of_const : float -> t
   val of_interval : float * float -> t
   val of_string : string -> t
   val of_int: IntDomain.IntDomTuple.t -> t
+  val reinterpret_int: IntDomain.IntDomTuple.t -> t
 
   val ending : float -> t
   val starting : float -> t
@@ -68,12 +70,40 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
   include Printable.Std (* for default invariant, tag and relift *)
   type t = (Float_t.t * Float_t.t) option [@@deriving eq, ord, to_yojson, hash]
 
+  let top () = None
+  let is_top = Option.is_none
+
+  let norm v = 
+    let normed = match v with
+      | Some (low, high) -> 
+        if Float_t.is_finite low && Float_t.is_finite high then 
+          if low > high then failwith "invalid Interval"
+          else v
+        else None
+      | _ -> None
+    in if is_top normed then
+      Messages.warn ~category:Messages.Category.Float ~tags:[CWE 189; CWE 739] 
+        "Float could be +/-infinity or Nan";
+    normed
+
   let to_int ik = function
     | None -> IntDomain.IntDomTuple.top_of ik
     | Some (l, h) -> 
       (* as converting from float to integer is (exactly) defined as leaving out the fractional part,
          (value is truncated towrad zero) we do not require specific rounding here *)
       IntDomain.IntDomTuple.of_interval ik (Float_t.to_big_int l, Float_t.to_big_int h)
+  
+  let as_int ik x = if (bytesSizeOfInt ik * 8) <> Float_t.bits then failwith "reinterpreting float to different sized int"; 
+    match x with 
+    | None -> IntDomain.IntDomTuple.top_of ik
+    | Some (l, h) -> 
+      IntDomain.IntDomTuple.of_interval ik (Float_t.as_big_int l, Float_t.as_big_int h)
+
+  let reinterpret_int x =
+    norm @@ (match IntDomain.IntDomTuple.minimal x, IntDomain.IntDomTuple.maximal x with 
+        | Some(l), Some(h) -> Some (Float_t.of_big_int l, Float_t.of_big_int h)
+        | _ -> top ()
+              )
 
   let of_int x = 
     match IntDomain.IntDomTuple.minimal x, IntDomain.IntDomTuple.maximal x with
@@ -105,24 +135,7 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
 
   let is_bot _ = false
 
-  let top () = None
-
-  let is_top = Option.is_none
-
   let neg = Option.map (fun (low, high) -> (Float_t.neg high, Float_t.neg low))
-
-  let norm v = 
-    let normed = match v with
-      | Some (low, high) -> 
-        if Float_t.is_finite low && Float_t.is_finite high then 
-          if low > high then failwith "invalid Interval"
-          else v
-        else None
-      | _ -> None
-    in if is_top normed then
-      Messages.warn ~category:Messages.Category.Float ~tags:[CWE 189; CWE 739] 
-        "Float could be +/-infinity or Nan";
-    normed
 
   (**just for norming the arbitraries, so correct intervals get created, but no failwith if low > high*)
   let norm_arb v = 
@@ -354,12 +367,14 @@ module type FloatDomain = sig
   include FloatArith with type t := t
 
   val to_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
+  val as_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
   val cast_to : Cil.fkind -> t -> t
 
   val of_const : Cil.fkind -> float -> t
   val of_interval : Cil.fkind -> float*float -> t
   val of_string : Cil.fkind -> string -> t
   val of_int: Cil.fkind -> IntDomain.IntDomTuple.t -> t
+  val reinterpret_int: Cil.fkind -> IntDomain.IntDomTuple.t -> t
 
   val top_of: Cil.fkind -> t
   val bot_of: Cil.fkind -> t
@@ -458,12 +473,14 @@ module FloatIntervalImplLifted = struct
   let of_const fkind x = dispatch_fkind fkind ((fun () -> F1.of_const x), (fun () -> F2.of_const x))
   let of_string fkind str = dispatch_fkind fkind ((fun () -> F1.of_string str), (fun () -> F2.of_string str))
   let of_int fkind i = dispatch_fkind fkind ((fun () -> F1.of_int i), (fun () -> F2.of_int i))
+  let reinterpret_int fkind i = dispatch_fkind fkind ((fun () -> F1.reinterpret_int i), (fun () -> F2.reinterpret_int i))
   let of_interval fkind i = dispatch_fkind fkind ((fun () -> F1.of_interval i), (fun () -> F2.of_interval i))
   let starting fkind s = dispatch_fkind fkind ((fun () -> F1.starting s), (fun () -> F2.starting s))
   let ending fkind e = dispatch_fkind fkind ((fun () -> F1.ending e), (fun () -> F2.ending e))
   let minimal = dispatch (F1.minimal, F2.minimal)
   let maximal = dispatch (F1.maximal, F2.maximal)
   let to_int ikind = dispatch (F1.to_int ikind, F2.to_int ikind)
+  let as_int ikind = dispatch (F1.as_int ikind, F2.as_int ikind)
   let cast_to fkind x =
     let create_interval fkind l h = 
       match l, h with 
@@ -588,8 +605,12 @@ module FloatDomTupleImpl = struct
 
   let of_int fkind =
     create { fi= (fun (type a) (module F : FloatDomain with type t = a) -> F.of_int fkind); }
+  
+  let reinterpret_int fkind =
+    create { fi= (fun (type a) (module F : FloatDomain with type t = a) -> F.reinterpret_int fkind); }
 
   let to_int ik = Option.map_default (F1.to_int ik) (IntDomain.IntDomTuple.top_of ik)
+  let as_int ik = Option.map_default (F1.as_int ik) (IntDomain.IntDomTuple.top_of ik)
 
   let cast_to fkind =
     map { f1= (fun (type a) (module F : FloatDomain with type t = a) -> (fun x -> F.cast_to fkind x)); }
