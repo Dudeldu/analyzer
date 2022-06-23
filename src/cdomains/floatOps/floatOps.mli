@@ -12,13 +12,10 @@ module type CFloatType = sig
   val upper_bound: t
   val lower_bound: t
   val smallest : t
-  val bits : int
 
   val of_float: round_mode -> float -> t
   val to_float: t -> float option
   val to_big_int: t -> Big_int_Z.big_int
-  val as_big_int: t -> Big_int_Z.big_int
-  val of_big_int: Big_int_Z.big_int -> t
 
   val is_finite: t -> bool
   val pred: t -> t

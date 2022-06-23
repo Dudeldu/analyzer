@@ -12,13 +12,10 @@ module type CFloatType = sig
   val upper_bound: t
   val lower_bound: t
   val smallest : t
-  val bits : int
 
   val of_float: round_mode -> float -> t
   val to_float: t -> float option
   val to_big_int: t -> Big_int_Z.big_int
-  val as_big_int: t -> Big_int_Z.big_int
-  val of_big_int: Big_int_Z.big_int -> t
 
   val is_finite: t -> bool
   val pred: t -> t
@@ -54,13 +51,10 @@ module CDouble = struct
   let upper_bound = Float.max_float
   let lower_bound = -. Float.max_float
   let smallest = Float.min_float
-  let bits = 64
 
   let of_float _ x = x
   let to_float x = Some x
   let to_big_int = big_int_of_float
-  let as_big_int x = Big_int_Z.big_int_of_int64 @@ Int64.bits_of_float x
-  let of_big_int x = Int64.float_of_bits @@ Big_int_Z.int64_of_big_int x
 
   let is_finite = Float.is_finite
   let pred = Float.pred
@@ -90,12 +84,9 @@ module CFloat = struct
   let upper_bound = upper' ()
   let lower_bound = -. upper_bound
   let smallest = smallest' ()
-  let bits = 32
 
   let to_float x = Some x
   let to_big_int = big_int_of_float
-  let as_big_int x = Big_int_Z.big_int_of_int32 @@ Int32.bits_of_float x
-  let of_big_int x = Int32.float_of_bits @@ Int64.to_int32 @@ Big_int_Z.int64_of_big_int x
 
   let is_finite x = Float.is_finite x && x >= lower_bound && x <= upper_bound 
 

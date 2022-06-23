@@ -47,13 +47,11 @@ module type FloatDomainBase = sig
   include FloatArith with type t := t
 
   val to_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
-  val as_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
 
   val of_const : float -> t
   val of_interval : float * float -> t
   val of_string : string -> t
   val of_int: IntDomain.IntDomTuple.t -> t
-  val reinterpret_int: IntDomain.IntDomTuple.t -> t
 
   val ending : float -> t
   val starting : float -> t
@@ -73,14 +71,12 @@ module type FloatDomain = sig
   include FloatArith with type t := t
 
   val to_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
-  val as_int : Cil.ikind -> t -> IntDomain.IntDomTuple.t
   val cast_to : Cil.fkind -> t -> t
 
   val of_const : Cil.fkind -> float -> t
   val of_interval : Cil.fkind -> float*float -> t
   val of_string : Cil.fkind -> string -> t
   val of_int: Cil.fkind -> IntDomain.IntDomTuple.t -> t
-  val reinterpret_int: Cil.fkind -> IntDomain.IntDomTuple.t -> t
 
   val top_of: Cil.fkind -> t
   val bot_of: Cil.fkind -> t

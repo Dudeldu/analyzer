@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <stdio.h>
-#include <math.h>
 
 typedef int __int32_t;
 typedef unsigned int __uint32_t;
@@ -84,9 +83,9 @@ int main()
     float y = -0.0f;
     float res = fmax_float(x, y);
     // y is -0 and x is +0, the result shall be +0
-    assert(res == 0.0f);
-    assert(__signbit_float(res) == 0);
-    assert(!(res == 0.0f && __signbit_float(res) == 0));
+    assert(res == 0.0f); // SUCCESS!
+    assert(__signbit_float(res) == 1); // UNKNOWN!
+    assert(!(res == 0.0f && __signbit_float(res) == 0)); // FAIL!
 
     return 0;
 }
