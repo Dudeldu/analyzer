@@ -93,3 +93,4 @@ module type FloatDomain = sig
 end
 
 module FloatDomTupleImpl : FloatDomain
+module FloatDomTupleImplFixedRoundingMode : FloatDomain

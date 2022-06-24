@@ -655,3 +655,91 @@ module FloatDomTupleImpl = struct
   let printXml f x =
     BatPrintf.fprintf f "<value>\n<data>\n%s\n</data>\n</value>\n" (show x)
 end
+
+module FloatDomTupleImplFixedRoundingMode = struct
+  include Printable.Std
+  (* module F1 = FloatInterval *)
+  module F2 = FloatDomTupleImpl
+
+  type t = F2.t
+
+  (* TODO: I have just set it to something now... We will need to get this from some config, I guess! *)
+  let rounding_mode = Nearest
+
+
+
+  (* TODO: Continue Here: >>>>>> Start removing the todos one by one *)
+
+  let name () = failwith "todo"
+
+  (* TODO: These are from FloatDomTupleImpl... What are they? Do we need them? *)
+  type 'a m = (module FloatDomainBase with type t = 'a)
+  (* only first-order polymorphism on functions 
+     -> use records to get around monomorphism restriction on arguments (Same trick as used in intDomain) *)
+  type 'b poly_in = { fi : 'a. 'a m -> 'b -> 'a }
+  type 'b poly_pr = { fp : 'a. 'a m -> 'a -> 'b }
+  type 'b poly2_pr = { f2p : 'a. 'a m -> 'a -> 'a -> 'b }
+  type poly1 = { f1 : 'a. 'a m -> 'a -> 'a }
+  type poly2 = { f2 : 'a. 'a m -> 'a -> 'a -> 'a }
+
+  let create r x (f1 : float_precision) = failwith "todo"
+  let f b g =  failwith "todo"
+
+  let create r x = failwith "todo"
+  let opt_map2 f = failwith "todo"
+  let exists =  failwith "todo"
+  let for_all =  failwith "todo"
+  let mapp r =  failwith "todo"
+  let map r a =  failwith "todo"
+  let map2 r xa ya =  failwith "todo"
+  let map2p r xa ya =  failwith "todo"
+  let map2int r xa ya = failwith "todo"
+  let ( %% ) f g x =  failwith "todo"
+  let show x = failwith "todo"
+  let to_yojson = failwith "todo"
+  let hash x = failwith "todo"
+  let of_const = failwith "todo"
+  let of_interval = failwith "todo"
+  let ending = failwith "todo"
+  let starting = failwith "todo"
+  let to_float =  failwith "todo"
+  let maximal =  failwith "todo"
+  let minimal =  failwith "todo"
+  let top = failwith "todo"
+  let bot = failwith "todo"
+  let is_bot = failwith "todo"
+  let is_top = failwith "todo"
+  let of_int = failwith "todo"
+  let cast_to ik x = failwith "todo"
+  let leq = failwith "todo"
+  let pretty () x = failwith "todo"
+  let neg = failwith "todo"
+  let join = failwith "todo"
+  let meet = failwith "todo"
+  let widen = failwith "todo"
+  let narrow = failwith "todo"
+  let add = failwith "todo"
+  let sub = failwith "todo"
+  let mul = failwith "todo"
+  let div = failwith "todo"
+  let lt = failwith "todo"
+  let gt = failwith "todo"
+  let le = failwith "todo"
+  let ge = failwith "todo"
+  let eq = failwith "todo"
+  let ne = failwith "todo"
+  let pretty_diff () (x, y) =  failwith "todo"
+  let printXml f x = failwith "todo"
+
+  let equal = failwith "todo"
+  let compare = failwith "todo"
+  let isfinite = failwith "todo"
+  let isinf = failwith "todo"
+  let isnan = failwith "todo"
+  let isnormal = failwith "todo"
+  let signbit = failwith "todo"
+  let to_int = failwith "todo"
+  let of_string = failwith "todo"
+  let is_exact = failwith "todo"
+
+end
