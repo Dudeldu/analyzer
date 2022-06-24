@@ -659,19 +659,19 @@ end
 module FloatDomTupleImplFixedRoundingMode = struct
   include Printable.Std
   module F1 = FloatIntervalImplLifted
-  (* module F2 = FloatDomTupleImpl *)
+  module F2 = FloatDomTupleImpl
   open Batteries (* TODO: Needed? *)
 
   type t = F1.t option [@@deriving to_yojson, eq, ord]
 
-  (* type 'a m = (module FloatDomain with type t = 'a)
+  type 'a m = (module FloatDomain with type t = 'a)
   (* only first-order polymorphism on functions 
      -> use records to get around monomorphism restriction on arguments (Same trick as used in intDomain) *)
-  type 'b poly_in = { fi : 'a. 'a m -> 'b -> 'a }
+  (* type 'b poly_in = { fi : 'a. 'a m -> 'b -> 'a } *)
   type 'b poly_pr = { fp : 'a. 'a m -> 'a -> 'b }
-  type 'b poly2_pr = { f2p : 'a. 'a m -> 'a -> 'a -> 'b }
-  type poly1 = { f1 : 'a. 'a m -> 'a -> 'a }
-  type poly2 = { f2 : 'a. 'a m -> 'a -> 'a -> 'a } *)
+  (* type 'b poly2_pr = { f2p : 'a. 'a m -> 'a -> 'a -> 'b }
+     type poly1 = { f1 : 'a. 'a m -> 'a -> 'a }
+     type poly2 = { f2 : 'a. 'a m -> 'a -> 'a -> 'a } *)
 
 
   (* TODO: 
@@ -685,20 +685,24 @@ module FloatDomTupleImplFixedRoundingMode = struct
 
   let name () = "FloatDomTupleImplFixedRoundingMode"
 
-  let hash = failwith "todo"
-  let show = failwith "todo"
-  let pretty = failwith "todo"
-  let printXml = failwith "todo"
-  let leq = failwith "todo"
+  let hash = F2.hash
+  let show = F2.show
+  let pretty = F2.pretty
+  let printXml = F2.printXml
+  let leq = F2.leq
+
   let join = failwith "todo"
   let meet = failwith "todo"
   let widen = failwith "todo"
   let narrow = failwith "todo"
-  let pretty_diff = failwith "todo"
-  let bot = failwith "todo"
-  let is_bot = failwith "todo"
-  let top = failwith "todo"
-  let is_top = failwith "todo"
+
+  let pretty_diff = F2.pretty_diff
+  let bot = F2.bot
+  let is_bot = F2.is_bot
+  let top = F2.top
+  let is_top = F2.is_top
+  
+  (* TODO: I think especially the next ones are relevant to actually implement in this module! *)
   let neg = failwith "todo"
   let add = failwith "todo"
   let sub = failwith "todo"
@@ -710,11 +714,13 @@ module FloatDomTupleImplFixedRoundingMode = struct
   let ge = failwith "todo"
   let eq = failwith "todo"
   let ne = failwith "todo"
-  let isfinite = failwith "todo"
-  let isinf = failwith "todo"
-  let isnan = failwith "todo"
-  let isnormal = failwith "todo"
-  let signbit = failwith "todo"
+
+  let isfinite = F2.isfinite
+  let isinf = F2.isinf
+  let isnan = F2.isnan
+  let isnormal = F2.isnormal
+  let signbit = F2.signbit
+
   let to_int = failwith "todo"
   let cast_to = failwith "todo"
   let of_const = failwith "todo"
