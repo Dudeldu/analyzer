@@ -70,6 +70,10 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
 
   let to_int ik = function
     | None -> IntDomain.IntDomTuple.top_of ik
+    (* special treatment for booleans as those aren't "just" truncated *)
+    | Some (l, h) when ik = IBool && (l > Float_t.zero || h < Float_t.zero) -> IntDomain.IntDomTuple.of_bool IBool true
+    | Some (l, h) when ik = IBool && l = h && l = Float_t.zero -> IntDomain.IntDomTuple.of_bool IBool false
+    | Some (l, h) when ik = IBool -> IntDomain.IntDomTuple.top_of IBool
     | Some (l, h) -> 
       (* as converting from float to integer is (exactly) defined as leaving out the fractional part,
          (value is truncated towrad zero) we do not require specific rounding here *)
