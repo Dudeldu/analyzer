@@ -658,10 +658,21 @@ end
 
 module FloatDomTupleImplFixedRoundingMode = struct
   include Printable.Std
-  (* module F1 = FloatInterval *)
-  module F2 = FloatDomTupleImpl
+  module F1 = FloatIntervalImplLifted
+  (* module F2 = FloatDomTupleImpl *)
+  open Batteries (* TODO: Needed? *)
 
-  type t = F2.t
+  type t = F1.t option [@@deriving to_yojson, eq, ord]
+
+  (* type 'a m = (module FloatDomain with type t = 'a)
+  (* only first-order polymorphism on functions 
+     -> use records to get around monomorphism restriction on arguments (Same trick as used in intDomain) *)
+  type 'b poly_in = { fi : 'a. 'a m -> 'b -> 'a }
+  type 'b poly_pr = { fp : 'a. 'a m -> 'a -> 'b }
+  type 'b poly2_pr = { f2p : 'a. 'a m -> 'a -> 'a -> 'b }
+  type poly1 = { f1 : 'a. 'a m -> 'a -> 'a }
+  type poly2 = { f2 : 'a. 'a m -> 'a -> 'a -> 'a } *)
+
 
   (* TODO: 
      What makes more sense? To put it here, like this, and use it from here? (We would then get it from a configuration
@@ -669,18 +680,15 @@ module FloatDomTupleImplFixedRoundingMode = struct
      Or to set it for each function separately?
      We will probably need to implement at least one function to know which way is really better...
   *)
-  let rounding_mode = Nearest
+  (* let rounding_mode = Nearest *)
 
 
   let name () = "FloatDomTupleImplFixedRoundingMode"
 
-  let equal = failwith "todo"
   let hash = failwith "todo"
-  let compare = failwith "todo"
   let show = failwith "todo"
   let pretty = failwith "todo"
   let printXml = failwith "todo"
-  let to_yojson = failwith "todo"
   let leq = failwith "todo"
   let join = failwith "todo"
   let meet = failwith "todo"
@@ -708,14 +716,17 @@ module FloatDomTupleImplFixedRoundingMode = struct
   let isnormal = failwith "todo"
   let signbit = failwith "todo"
   let to_int = failwith "todo"
+  let cast_to = failwith "todo"
   let of_const = failwith "todo"
   let of_interval = failwith "todo"
   let of_string = failwith "todo"
   let of_int = failwith "todo"
+  let top_of = failwith "todo"
+  let bot_of = failwith "todo"
   let ending = failwith "todo"
   let starting = failwith "todo"
   let minimal = failwith "todo"
   let maximal = failwith "todo"
   let is_exact = failwith "todo"
-
+  let precision = failwith "todo"
 end
