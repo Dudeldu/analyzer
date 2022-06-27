@@ -83,11 +83,11 @@ int main()
 
     if (a < 10)
     {
-        assert(a <= 10.); // SUCCESS!
+        assert(a < 10.); // SUCCESS!
     }
     if (b < 10)
     {
-        assert(b <= 10.f); // SUCCESS!
+        assert(b < 10.f); // SUCCESS!
     }
 
     if (a > 1.)
