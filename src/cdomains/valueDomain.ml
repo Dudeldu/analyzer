@@ -328,7 +328,7 @@ struct
     in
     let one_addr = let open Addr in function
         (* only allow conversion of float pointers if source and target type are the same *)
-        | Addr ({ vtype = TFloat(fkind, _); _}, _) as x when (match t with TFloat (fkind', _) when fkind = fkind'-> true | _ -> false) -> x
+        | Addr ({ vtype = TFloat(fkind, _); _}, _) as x when (match t with TFloat (fkind', _) when fkind = fkind' -> true | _ -> false) -> x
           (* do not allow conversion from/to float pointers*)
         | Addr ({ vtype = TFloat(_); _}, _) -> UnknownPtr
         | _ when (match t with TFloat _ -> true | _ -> false) -> UnknownPtr

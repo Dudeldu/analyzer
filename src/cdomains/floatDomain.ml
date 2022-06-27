@@ -75,7 +75,7 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
          (value is truncated towrad zero) we do not require specific rounding here *)
       IntDomain.IntDomTuple.of_interval ik (Float_t.to_big_int l, Float_t.to_big_int h)
 
-  let of_int x =
+  let of_int x = 
     match IntDomain.IntDomTuple.minimal x, IntDomain.IntDomTuple.maximal x with
     | Some l, Some h when l >= Float_t.to_big_int Float_t.lower_bound && h <= Float_t.to_big_int Float_t.upper_bound ->
       let l' = Float_t.of_float Down (Big_int_Z.float_of_big_int l) in

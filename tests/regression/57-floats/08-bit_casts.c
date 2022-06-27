@@ -1,4 +1,4 @@
-#include <assert.h>
+// PARAM: --enable ana.float.interval --enable warn.float
 
 typedef union
 {
