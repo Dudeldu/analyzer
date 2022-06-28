@@ -691,10 +691,10 @@ module FloatDomTupleImplFixedRoundingMode = struct
   let printXml = F2.printXml
   let leq = F2.leq
 
-  let join = failwith "todo"
-  let meet = failwith "todo"
-  let widen = failwith "todo"
-  let narrow = failwith "todo"
+  let join = F2.join
+  let meet = F2.meet
+  let widen = F2.widen
+  let narrow = F2.narrow
 
   let pretty_diff = F2.pretty_diff
   let bot = F2.bot
@@ -702,18 +702,18 @@ module FloatDomTupleImplFixedRoundingMode = struct
   let top = F2.top
   let is_top = F2.is_top
   
-  (* TODO: I think especially the next ones are relevant to actually implement in this module! *)
-  let neg = failwith "todo"
-  let add = failwith "todo"
-  let sub = failwith "todo"
-  let mul = failwith "todo"
-  let div = failwith "todo"
-  let lt = failwith "todo"
-  let gt = failwith "todo"
-  let le = failwith "todo"
-  let ge = failwith "todo"
-  let eq = failwith "todo"
-  let ne = failwith "todo"
+  let neg = F2.neg
+  let add = failwith "todo: need to add our own"
+  let sub = failwith "todo: need to add our own"
+  let mul = failwith "todo: need to add our own"
+  let div = failwith "todo: need to add our own"
+
+  let lt = F2.lt
+  let gt = F2.gt
+  let le = F2.le
+  let ge = F2.ge
+  let eq = F2.eq
+  let ne = F2.ne
 
   let isfinite = F2.isfinite
   let isinf = F2.isinf
