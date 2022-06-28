@@ -1849,7 +1849,7 @@ struct
       | MinusA ->
         (* A - B = C \ forall a \in A. a - b_max > pred c_min \land a - b_min < succ c_max 
             \land a - b_min > pred c_min \land a - b_max < succ c_max
-           \rightarrow A = [min(pred c_min + b_max, pred c_min + b_min), max(succ c_max + b_min, succ c_max + b_min)]
+           \rightarrow A = [min(pred c_min + b_max, pred c_min + b_min), max(succ c_max + b_max, succ c_max + b_max)]
         *)
         let a' = (match FD.minimal c, FD.maximal c, FD.minimal b, FD.maximal b with 
             | Some c_min, Some c_max, Some b_min, Some b_max when Float.is_finite (Float.pred c_min) && Float.is_finite (Float.succ c_max) -> 
