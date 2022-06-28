@@ -1838,11 +1838,12 @@ struct
         (* A + B = C, \forall a \in A. a + b_min > pred c_min \land a + b_max < succ c_max
             \land a + b_max > pred c_min \land a + b_min < succ c_max
            \rightarrow A = [min(pred c_min - b_min, pred c_min - b_max), max(succ c_max - b_max, succ c_max - b_min)]
+           \rightarrow A = [pred c_min - b_max, succ c_max - b_min]
         *)
         let reverse_add v v' = (match FD.minimal c, FD.maximal c, FD.minimal v, FD.maximal v with 
             | Some c_min, Some c_max, Some v_min, Some v_max when Float.is_finite (Float.pred c_min) && Float.is_finite (Float.succ c_max) -> 
-              let l = Float.min (Float.pred c_min -. v_min) (Float.pred c_min -. v_max) in 
-              let h =  Float.max (Float.succ c_max -. v_max) (Float.succ c_max -. v_min) in 
+              let l = Float.pred c_min -. v_max in
+              let h =  Float.succ c_max -. v_min in
               FD.of_interval (FD.get_fkind c) (l, h)
             | _ -> v') in
         meet_bin (reverse_add b a) (reverse_add a b)
@@ -1850,11 +1851,12 @@ struct
         (* A - B = C \ forall a \in A. a - b_max > pred c_min \land a - b_min < succ c_max 
             \land a - b_min > pred c_min \land a - b_max < succ c_max
            \rightarrow A = [min(pred c_min + b_max, pred c_min + b_min), max(succ c_max + b_max, succ c_max + b_max)]
+           \rightarrow A = [pred c_min + b_min, succ c_max + b_max]
         *)
         let a' = (match FD.minimal c, FD.maximal c, FD.minimal b, FD.maximal b with 
             | Some c_min, Some c_max, Some b_min, Some b_max when Float.is_finite (Float.pred c_min) && Float.is_finite (Float.succ c_max) -> 
-              let l = Float.min (Float.pred c_min +. b_max) (Float.pred c_min +. b_min) in 
-              let h =  Float.max (Float.succ c_max +. b_min) (Float.succ c_max +. b_max) in 
+              let l = Float.pred c_min +. b_min in
+              let h =  Float.succ c_max +. b_max in
               FD.of_interval (FD.get_fkind c) (l, h)
             | _ -> a) in
         (* A - B = C \ forall b \in B. a_min - b > pred c_min \land a_max - b < succ c_max 
