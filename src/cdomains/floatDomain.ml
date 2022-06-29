@@ -478,7 +478,7 @@ module FloatIntervalImplLifted = struct
     | _ -> x
 
   let invariant e (x:t) =
-    let fk = precision x in
+    let fk = get_fkind x in
     match minimal x, maximal x with
     | Some x1, Some x2 when x1 = x2 ->
       Invariant.of_exp Cil.(BinOp (Eq, e, Const (CReal (x1, fk, None)), intType))
