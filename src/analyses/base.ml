@@ -1832,6 +1832,7 @@ struct
         a, b
     in
     let inv_bin_float (a, b) fkind c op =
+      let open Stdlib in
       let meet_bin a' b'  = FD.meet a a', FD.meet b b' in
       match op with
       | PlusA  ->
@@ -1937,9 +1938,9 @@ struct
             | Ge, Some true
             | Lt, Some false -> meet_bin (FD.starting (FD.get_fkind a) l2) (FD.ending (FD.get_fkind b) u1)
             | Lt, Some true
-            | Ge, Some false -> meet_bin (FD.ending (FD.get_fkind a) (Float.pred u2)) (FD.starting (FD.get_fkind b) (Float.succ l1))
+            | Ge, Some false -> meet_bin (FD.ending_before (FD.get_fkind a) u2) (FD.starting_after (FD.get_fkind b) l1)
             | Gt, Some true
-            | Le, Some false -> meet_bin (FD.starting (FD.get_fkind a) (Float.succ l2)) (FD.ending (FD.get_fkind b) (Float.pred u1))
+            | Le, Some false -> meet_bin (FD.starting_after (FD.get_fkind a) l2) (FD.ending_before (FD.get_fkind b) u1)
             | _, _ -> a, b)
          | _ -> a, b)
       | op ->

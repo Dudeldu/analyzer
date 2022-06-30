@@ -78,7 +78,7 @@ int main()
     }
     if (b / 3.f > 10.f)
     {
-        assert(b >= 30.); // SUCCESS!
+        assert(b >= 30); // SUCCESS!
     }
 
     if (a < 10)
