@@ -3,6 +3,8 @@ open PrecisionUtil
 open FloatOps
 open Cil
 
+exception ArithmeticOnFloatBot of string
+
 module type FloatArith = sig
   type t
 
@@ -116,7 +118,7 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
   let pretty_diff () (x, y) =
     Pretty.dprintf "%a instead of %a" pretty x pretty y
 
-  let bot () = failwith "no bot exists"
+  let bot () = failwith "no bot exists at this level"
 
   let is_bot _ = false
 
@@ -436,28 +438,37 @@ end
 
 module FloatIntervalImplLifted = struct
   include Printable.Std (* for default invariant, tag and relift *)
-  type t = F32 of F32Interval.t | F64 of F64Interval.t [@@deriving to_yojson, eq, ord, hash]
+  type t = F32 of F32Interval.t | F64 of F64Interval.t | Bot [@@deriving to_yojson, eq, ord, hash]
 
   module F1 = F32Interval
   module F2 = F64Interval
 
+  let show = function (* TODO add fkind to output *)
+    | Bot -> "[Bot]"
+    | F32 a -> F1.show a
+    | F64 a -> F2.show a
+
   let lift2 (op32, op64) x y = match x, y with
+    | Bot, _ | _, Bot -> raise (ArithmeticOnFloatBot (Printf.sprintf "%s op %s" (show x) (show y)))
     | F32 a, F32 b -> F32 (op32 a b)
     | F64 a, F64 b -> F64 (op64 a b)
     | F32 a, F64 b -> failwith ("fkinds float and double are incompatible. Values: " ^ Prelude.Ana.sprint F32Interval.pretty a ^ " and " ^ Prelude.Ana.sprint F64Interval.pretty b)
     | F64 a, F32 b -> failwith ("fkinds double and float are incompatible. Values: " ^ Prelude.Ana.sprint F64Interval.pretty a ^ " and " ^ Prelude.Ana.sprint F32Interval.pretty b)
 
   let lift2_cmp (op32, op64) x y = match x, y with
+    | Bot, _ | _, Bot -> raise (ArithmeticOnFloatBot (Printf.sprintf "%s op %s" (show x) (show y)))
     | F32 a, F32 b -> op32 a b
     | F64 a, F64 b -> op64 a b
     | F32 a, F64 b -> failwith ("fkinds float and double are incompatible. Values: " ^ Prelude.Ana.sprint F32Interval.pretty a ^ " and " ^ Prelude.Ana.sprint F64Interval.pretty b)
     | F64 a, F32 b -> failwith ("fkinds double and float are incompatible. Values: " ^ Prelude.Ana.sprint F64Interval.pretty a ^ " and " ^ Prelude.Ana.sprint F32Interval.pretty b)
 
   let lift (op32, op64) x = match x with
+    | Bot -> raise (ArithmeticOnFloatBot (Printf.sprintf "unop %s" (show x)))
     | F32 a -> F32 (op32 a)
     | F64 a -> F64 (op64 a)
 
   let dispatch (op32, op64) x = match x with
+    | Bot -> raise (ArithmeticOnFloatBot (Printf.sprintf "unop %s" (show x)))
     | F32 a -> op32 a
     | F64 a -> op64 a
 
@@ -492,27 +503,50 @@ module FloatIntervalImplLifted = struct
   let isnormal = dispatch (F1.isnormal, F2.isnormal)
   let signbit = dispatch (F1.signbit, F2.signbit)
 
-  let bot_of fkind = dispatch_fkind fkind (F1.bot, F2.bot)
-  let bot () = failwith "bot () is not implemented for FloatIntervalImplLifted."
-  let is_bot = dispatch (F1.is_bot, F2.is_bot)
-  let top_of fkind = dispatch_fkind fkind (F1.top, F2.top)
+  let bot () = Bot
+  let bot_of _ = bot () (** bot is Bot regardless of fkind*)
+  let is_bot = function
+    | Bot -> true
+    | f -> dispatch (F1.is_bot, F2.is_bot) f
+
   let top () = failwith "top () is not implemented for FloatIntervalImplLifted."
-  let is_top = dispatch (F1.is_bot, F2.is_bot)
+  let top_of fkind = dispatch_fkind fkind (F1.top, F2.top)
+  let is_top = function
+    | Bot -> false
+    | f -> dispatch (F1.is_bot, F2.is_bot) f
 
   let get_fkind = dispatch ((fun _ -> FFloat), (fun _ -> FDouble))
 
-  let leq = lift2_cmp (F1.leq, F2.leq)
-  let join = lift2 (F1.join, F2.join)
-  let meet = lift2 (F1.meet, F2.meet)
-  let widen = lift2 (F1.widen, F2.widen)
-  let narrow = lift2 (F1.narrow, F2.narrow)
+  let leq x y = match x, y with
+    | Bot, _ -> true
+    | _, Bot -> false
+    | _ -> lift2_cmp (F1.leq, F2.leq) x y
+
+  let join x y = match x, y with
+    | Bot, v | v, Bot -> v
+    | _ -> lift2 (F1.join, F2.join) x y
+
+  let meet x y = match x, y with
+    | Bot, _ | _, Bot -> Bot
+    | _ -> lift2 (F1.meet, F2.meet) x y
+
+  let widen x y = match x, y with
+    | Bot, v | v, Bot -> v
+    | _ -> lift2 (F1.widen, F2.widen) x y
+
+  let narrow x y = match x, y with
+    | Bot, _ | _, Bot -> Bot
+    | _ -> lift2 (F1.narrow, F2.narrow) x y
+    
+  let pretty () x = match x with
+    | Bot -> text "[Bot]"
+    | f -> dispatch (F1.pretty (), F2.pretty ()) f (* TODO add fkind to output *)
+
+  let pretty_diff () (x, y) = Pretty.dprintf "%a instead of %a" pretty x pretty y
+
+  let printXml f x = BatPrintf.fprintf f "<value>\n<data>\n%s\n</data>\n</value>\n" (show x) (* TODO add fkind to output *)
+
   let is_exact = dispatch (F1.is_exact, F2.is_exact)
-
-  let show = dispatch (F1.show, F2.show)  (* TODO add fkind to output *)
-  let pretty = (fun () -> dispatch (F1.pretty (), F2.pretty ())) (* TODO add fkind to output *)
-
-  let pretty_diff () (x, y) = lift2_cmp ((fun a b -> F1.pretty_diff () (a, b)), (fun a b -> F2.pretty_diff () (a, b))) x y(* TODO add fkind to output *)
-  let printXml o = dispatch (F1.printXml o, F2.printXml o) (* TODO add fkind to output *)
 
   (* This is for debugging *)
   let name () = "FloatIntervalImplLifted(F32|F64)"
