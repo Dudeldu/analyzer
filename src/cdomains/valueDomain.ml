@@ -267,8 +267,9 @@ struct
   let is_safe_cast t2 t1 = match t2, t1 with
     (*| TPtr _, t -> bitsSizeOf t <= bitsSizeOf !upointType
       | t, TPtr _ -> bitsSizeOf t >= bitsSizeOf !upointType*)
-    | TInt (ik,_), TFloat (fk,_) (* does a1 fit into ik's range? *)
-    | TFloat (fk,_), TInt (ik,_) (* can a1 be represented as fk? *)
+    | TFloat (fk1,_), TFloat (fk2,_) when fk1 = fk2 -> true
+    | _, TFloat (fk,_) (* does a1 fit into ik's range? *)
+    | TFloat (fk,_), _ (* can a1 be represented as fk? *)
       -> false (* TODO precision *)
     | _ -> IntDomain.Size.is_cast_injective ~from_type:t1 ~to_type:t2 && bitsSizeOf t2 >= bitsSizeOf t1
   (*| _ -> false*)
