@@ -411,8 +411,69 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
     | (l, _) when l > Float_t.zero -> false_zero_IInt
     | _ -> unknown_IInt (**any interval containing zero has to fall in this case, because we do not distinguish between 0. and -0. *)
 
-  (**This Constant overapproximates pi to use as bounds for the return values of trigonometric functions *)
+  (**These constants over-/underpproximate pi *)
   let overapprox_pi = 3.1416
+  let underapprox_pi = 3.1415
+
+  let trig_helper l h = (** computes l', l'', h', h''*)
+    let ft_over_2pi = (Float_t.mul Up (Float_t.of_float Up 2.) (Float_t.of_float Up overapprox_pi)) in
+    let ft_under_2pi = (Float_t.mul Down (Float_t.of_float Down 2.) (Float_t.of_float Down underapprox_pi)) in
+    let l' =
+      if l >= Float_t.zero then (Float_t.div Down l ft_over_2pi)
+      else (Float_t.div Down l ft_under_2pi)
+    in
+    let h' = 
+      if h >= Float_t.zero then (Float_t.div Up h ft_under_2pi)
+      else (Float_t.div Up h ft_over_2pi)
+    in
+    let l'' = 
+      if l' >= Float_t.zero then 
+        Float_t.sub Down l' (Float_t.of_float Down (Big_int_Z.float_of_big_int (Float_t.to_big_int l')))
+      else 
+        Float_t.sub Down l' (Float_t.of_float Down (Big_int_Z.float_of_big_int (IntOps.BigIntOps.sub (Float_t.to_big_int l') (Big_int_Z.big_int_of_int 1))))
+    in
+    let h'' = 
+      if h' >= Float_t.zero then 
+        Float_t.sub Up h' (Float_t.of_float Up (Big_int_Z.float_of_big_int (Float_t.to_big_int h')))
+      else 
+        Float_t.sub Up h' (Float_t.of_float Up (Big_int_Z.float_of_big_int (IntOps.BigIntOps.sub (Float_t.to_big_int h') (Big_int_Z.big_int_of_int 1))))
+    in
+    (l', l'', h', h'')
+
+  let eval_cos_cfun l h =
+    let (l', l'', h', h'') = trig_helper l h in
+    if (Float_t.sub Up h' l') <= (Float_t.of_float Down 0.5) && (h'' <= Float_t.of_float Up 0.5) && (h'' >= l'') then
+      Interval (Float_t.cos Down h, Float_t.cos Up l)
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 0.5) && (l'' >= Float_t.of_float Down 0.5) && (h'' >= l'') then
+      Interval (Float_t.cos Down l, Float_t.cos Up h)
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 1.) && (l'' <= h'') then
+      Interval (Float_t.of_float Down (-.1.), max (Float_t.cos Up l) (Float_t.cos Up h))
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 1.) && (l'' >= Float_t.of_float Down 0.5) && (h'' >= l'' || h'' <= Float_t.of_float Down 0.5) then
+      Interval (min (Float_t.cos Down l) (Float_t.cos Down h), Float_t.of_float Up 1.)
+    else
+    of_interval (-. 1., 1.)
+
+  let eval_sin_cfun l h =
+    let (l', l'', h', h'') = trig_helper l h in
+    if (Float_t.sub Up h' l') <= (Float_t.of_float Down 0.5) && (l'' >= Float_t.of_float Up 0.25) && (h'' <= Float_t.of_float Down 0.75) && (h'' >= l'') then
+      Interval (Float_t.sin Down h, Float_t.sin Up l)
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 0.5) && (l'' >= Float_t.of_float Up 0.75) && (h'' >= l'' || h'' <= Float_t.of_float Down 0.25) then
+      Interval (Float_t.sin Down l, Float_t.sin Up h)
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 1.) && (l'' >= Float_t.of_float Up 0.25) && (h'' >= l'' || h'' <= Float_t.of_float Down 0.25) then
+      Interval (Float_t.of_float Down (-.1.), max (Float_t.sin Up l) (Float_t.sin Up h))
+    else if (Float_t.sub Up h' l') <= (Float_t.of_float Down 1.) &&  (l'' >= Float_t.of_float Up 0.75) && (h'' >= l'' || h'' <= Float_t.of_float Down 0.75) then
+      Interval (min (Float_t.sin Down l) (Float_t.sin Down h), Float_t.of_float Up 1.)
+    else 
+      of_interval (-. 1., 1.)
+    
+  let eval_tan_cfun l h =
+    let (l', l'', h', h'') = trig_helper l h in
+    if (Float_t.sub Up h' l') <= (Float_t.of_float Down 0.5) 
+      && Bool.not ((l'' <= Float_t.of_float Up 0.25) && (h'' >= Float_t.of_float Down 0.25)) 
+      && Bool.not ((l'' <= Float_t.of_float Up 0.75) && (h'' >= Float_t.of_float Down 0.75)) then
+        Interval (Float_t.tan Down l, Float_t.tan Up h)
+    else
+      top ()
 
   let eval_fabs = function
     | (l, h) when l > Float_t.zero -> Interval (l, h)
@@ -421,33 +482,45 @@ module FloatIntervalImpl(Float_t : CFloatType) = struct
 
   let eval_acos = function
     | (l, h) when l = h && l = Float_t.of_float Nearest 1. -> of_const 0. (*acos(1) = 0*)
-    | (l, h) ->
-      if l < (Float_t.of_float Down (-.1.)) || h > (Float_t.of_float Up 1.) then
-        Messages.warn ~category:Messages.Category.Float "Domain error might occur: acos argument might be outside of [-1., 1.]";
-      of_interval (0., (overapprox_pi)) (**could be more exact *)
+    | (l, h) when l < (Float_t.of_float Down (-.1.)) || h > (Float_t.of_float Up 1.) ->
+      Messages.warn ~category:Messages.Category.Float "Domain error might occur: acos argument might be outside of [-1., 1.]";
+      of_interval (0., (overapprox_pi))
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ Interval (Float_t.acos Down h, Float_t.acos Up l) (** acos is monotonic decreasing in [-1, 1]*)
+    | _ -> of_interval (0., (overapprox_pi))
 
   let eval_asin = function
     | (l, h) when l = h && l = Float_t.zero -> of_const 0. (*asin(0) = 0*)
-    | (l, h) ->
-      if l < (Float_t.of_float Down (-.1.)) || h > (Float_t.of_float Up 1.) then
-        Messages.warn ~category:Messages.Category.Float "Domain error might occur: asin argument might be outside of [-1., 1.]";
-      div (of_interval ((-. overapprox_pi), overapprox_pi)) (of_const 2.) (**could be more exact *)
+    | (l, h) when l < (Float_t.of_float Down (-.1.)) || h > (Float_t.of_float Up 1.) ->
+      Messages.warn ~category:Messages.Category.Float "Domain error might occur: asin argument might be outside of [-1., 1.]";
+      div (of_interval ((-. overapprox_pi), overapprox_pi)) (of_const 2.)
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ Interval (Float_t.asin Down l, Float_t.asin Up h) (** asin is monotonic increasing in [-1, 1]*)
+    | _ -> div (of_interval ((-. overapprox_pi), overapprox_pi)) (of_const 2.)
 
   let eval_atan = function
     | (l, h) when l = h && l = Float_t.zero -> of_const 0. (*atan(0) = 0*)
-    | _ -> div (of_interval ((-. overapprox_pi), overapprox_pi)) (of_const 2.) (**could be more exact *)
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ Interval (Float_t.atan Down l, Float_t.atan Up h) (** atan is monotonic increasing*)
+    | _ -> div (of_interval ((-. overapprox_pi), overapprox_pi)) (of_const 2.)
 
   let eval_cos = function
     | (l, h) when l = h && l = Float_t.zero -> of_const 1. (*cos(0) = 1*)
-    | _ -> of_interval (-. 1., 1.) (**could be exact for intervals where l=h, or even for Interval intervals *)
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ eval_cos_cfun l h
+    | _ -> of_interval (-. 1., 1.)
 
   let eval_sin = function
     | (l, h) when l = h && l = Float_t.zero -> of_const 0. (*sin(0) = 0*)
-    | _ -> of_interval (-. 1., 1.) (**could be exact for intervals where l=h, or even for some intervals *)
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ eval_sin_cfun l h
+    | _ -> of_interval (-. 1., 1.)
 
   let eval_tan = function
     | (l, h) when l = h && l = Float_t.zero -> of_const 0. (*tan(0) = 0*)
-    | _ -> top () (**could be exact for intervals where l=h, or even for some intervals *)
+    | (l, h) when GobConfig.get_bool "ana.float.math_funeval" ->
+      norm @@ eval_tan_cfun l h
+    | _ -> top ()
 
   let isfinite = eval_unop unknown_IInt eval_isfinite
   let isinf = eval_unop unknown_IInt eval_isinf

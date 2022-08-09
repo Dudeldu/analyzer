@@ -47,6 +47,17 @@ static void change_round_mode(int mode)
         return caml_copy_double(r);                              \
     }
 
+#define UNARY_FUN(name, type)                                \
+    CAMLprim value name##_##type(value mode, value x)   \
+    {                                                            \
+        int old_roundingmode = fegetround();                     \
+        change_round_mode(Int_val(mode));                        \
+        volatile type r, x1 = Double_val(x); \
+        r = name(x1);                                            \
+        fesetround(old_roundingmode);                            \
+        return caml_copy_double(r);                              \
+    }
+
 BINARY_OP(add, double, +);
 BINARY_OP(add, float, +);
 BINARY_OP(sub, double, -);
@@ -55,6 +66,19 @@ BINARY_OP(mul, double, *);
 BINARY_OP(mul, float, *);
 BINARY_OP(div, double, /);
 BINARY_OP(div, float, /);
+
+UNARY_FUN(acos, double);
+UNARY_FUN(acos, float);
+UNARY_FUN(asin, float);
+UNARY_FUN(asin, double);
+UNARY_FUN(atan, float);
+UNARY_FUN(atan, double);
+UNARY_FUN(cos, double);
+UNARY_FUN(cos, float);
+UNARY_FUN(sin, float);
+UNARY_FUN(sin, double);
+UNARY_FUN(tan, float);
+UNARY_FUN(tan, double);
 
 CAMLprim value atof_double(value mode, value str)
 {
